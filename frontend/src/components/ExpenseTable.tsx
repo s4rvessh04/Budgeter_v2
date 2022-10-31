@@ -12,9 +12,9 @@ import {
 	Skeleton,
 	useColorModeValue,
 	useDisclosure,
+	Box,
 } from "@chakra-ui/react";
 
-import { ExpenseEditDrawer } from "./ExpenseEditDrawer";
 import { ExpenseEditModal } from "./ExpenseEditModal";
 
 export const ExpenseTable = () => {
@@ -23,13 +23,12 @@ export const ExpenseTable = () => {
 
 	return (
 		<>
-			<TableContainer h={"full"} overflowY={"scroll"}>
+			<TableContainer h={"full"} overflowY={"auto"}>
 				<Table variant="simple" h={"full"}>
 					<Thead
 						pos={"sticky"}
 						top={0}
 						bgColor={useColorModeValue("white", "gray.900")}
-						zIndex={1}
 					>
 						<Tr>
 							<Th>Date</Th>
@@ -38,7 +37,7 @@ export const ExpenseTable = () => {
 						</Tr>
 					</Thead>
 					<Tbody>
-						{Array.from({ length: 6 }).map((item) => (
+						{[1, 1, 1, 1, 1, 1, 1, 1, 1, 1].map(() => (
 							<Tr
 								_hover={{
 									bgColor: useColorModeValue(
@@ -62,12 +61,12 @@ export const ExpenseTable = () => {
 											"gray.700"
 										)}
 									>
-										<Text
+										<Box
 											fontWeight={"semibold"}
 											sx={{
-												"font-variant-numeric":
+												fontVariantNumeric:
 													"proportional-nums",
-												"vertical-align": "baseline",
+												verticalAlign: "baseline",
 											}}
 										>
 											<Text fontSize={"sm"}>
@@ -79,12 +78,11 @@ export const ExpenseTable = () => {
 													"gray.500",
 													"gray.400"
 												)}
-												fontWeight={"semibold"}
 												mt={0.5}
 											>
 												12:05AM
 											</Text>
-										</Text>
+										</Box>
 									</Skeleton>
 								</Td>
 								<Td>
@@ -136,15 +134,23 @@ export const ExpenseTable = () => {
 						bgColor={useColorModeValue("white", "gray.900")}
 					>
 						<Tr>
-							<Th>To convert</Th>
-							<Th>into</Th>
-							<Th isNumeric>multiply by</Th>
+							<Th>TOTAL</Th>
+							<Th>20</Th>
+							<Th isNumeric>₹20000</Th>
 						</Tr>
 					</Tfoot>
 				</Table>
 			</TableContainer>
-			{/* <ExpenseEditDrawer onClose={onClose} isOpen={isOpen} /> */}
-			<ExpenseEditModal onClose={onClose} isOpen={isOpen} />
+			<ExpenseEditModal
+				onClose={onClose}
+				isOpen={isOpen}
+				displayData={{
+					date: "05th Aug, 2022",
+					time: "10:31AM",
+					description: "Food and Water",
+					amount: "2000",
+				}}
+			/>
 		</>
 	);
 };

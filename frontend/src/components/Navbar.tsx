@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { Link as ReachLink } from "@reach/router";
 import {
 	IconButton,
 	Box,
@@ -14,6 +15,11 @@ import {
 	BoxProps,
 	FlexProps,
 	useColorMode,
+	Menu,
+	MenuButton,
+	MenuList,
+	MenuOptionGroup,
+	MenuItemOption,
 } from "@chakra-ui/react";
 import {
 	FiHome,
@@ -24,20 +30,19 @@ import {
 	FiMenu,
 	FiSun,
 	FiMoon,
+	FiMoreHorizontal,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 
 interface LinkItemProps {
 	name: string;
+	path: string;
 	icon: IconType;
 }
 
 const LinkItems: Array<LinkItemProps> = [
-	{ name: "Home", icon: FiHome },
-	{ name: "Trending", icon: FiTrendingUp },
-	{ name: "Explore", icon: FiCompass },
-	{ name: "Favourites", icon: FiStar },
-	{ name: "Settings", icon: FiSettings },
+	{ name: "Home", path: "/", icon: FiHome },
+	{ name: "Settings", path: "/settings", icon: FiSettings },
 ];
 
 export function Navbar({ children }: { children: ReactNode }) {
@@ -51,7 +56,7 @@ export function Navbar({ children }: { children: ReactNode }) {
 		>
 			<SidebarContent
 				onClose={() => onClose}
-				display={{ base: "none", md: "block" }}
+				display={{ base: "none", lg: "block" }}
 			/>
 			<Drawer
 				autoFocus={false}
@@ -67,13 +72,26 @@ export function Navbar({ children }: { children: ReactNode }) {
 				</DrawerContent>
 			</Drawer>
 			{/* mobilenav */}
-			<MobileNav display={{ base: "flex", md: "none" }} onOpen={onOpen} />
-			<Box ml={{ base: 0, md: 60 }} p="2">
+			<MobileNav display={{ base: "flex", lg: "none" }} onOpen={onOpen} />
+			<Box ml={{ base: 0, lg: 60 }} py={{ base: 5, lg: 2 }}>
 				{children}
 			</Box>
 		</Box>
 	);
 }
+
+const NavLink = (props: any) => {
+	<ReachLink
+		{...props}
+		getProps={({ isCurrent }) => {
+			return {
+				style: {
+					color: isCurrent ? "red" : "blue",
+				},
+			};
+		}}
+	/>;
+};
 
 interface SidebarProps extends BoxProps {
 	onClose: () => void;
@@ -87,14 +105,13 @@ const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
 			bg={useColorModeValue("white", "gray.900")}
 			borderRight="1px"
 			borderRightColor={useColorModeValue("gray.200", "gray.700")}
-			w={{ base: "full", md: 60 }}
+			w={{ base: "full", lg: 60 }}
 			pos="fixed"
-			h="full"
+			h={"full"}
 			{...rest}
 		>
-			<Flex flexDirection={"column"} h={"full"}>
+			<Flex flexDirection={"column"} h="full">
 				<Flex
-					// h="20"
 					py="5"
 					alignItems="center"
 					mx="8"
@@ -108,24 +125,61 @@ const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
 						Budgeter
 					</Text>
 					<CloseButton
-						display={{ base: "flex", md: "none" }}
+						display={{ base: "flex", lg: "none" }}
 						onClick={onClose}
 					/>
 				</Flex>
-				<Flex flexDirection={"column"} flex={"1"}>
+				<Flex flexDirection={"column"} flex="1">
 					{LinkItems.map((link) => (
-						<NavItem key={link.name} icon={link.icon}>
+						<NavItem
+							key={link.name}
+							icon={link.icon}
+							path={link.path}
+						>
 							{link.name}
 						</NavItem>
 					))}
 				</Flex>
-				<Flex justify={"center"}>
+				<Flex
+					justifyContent={"space-between"}
+					mb={{ base: 14, lg: 4 }}
+					py="5"
+					mx="8"
+				>
 					<IconButton
 						onClick={toggleColorMode}
-						aria-label="Search database"
+						aria-label="Theme toggler"
 						icon={colorMode === "dark" ? <FiSun /> : <FiMoon />}
 						_focus={{ outline: "none" }}
 					/>
+					<Menu closeOnSelect={true}>
+						<MenuButton
+							_focus={{ outline: "none" }}
+							as={IconButton}
+						>
+							<FiMoreHorizontal style={{ margin: "auto" }} />
+						</MenuButton>
+						<MenuList minWidth="240px" p="1" mb={3.5}>
+							<MenuOptionGroup
+								defaultValue="all-time"
+								title="Select data time"
+								type="radio"
+							>
+								<MenuItemOption
+									value="all-time"
+									_focus={{ outline: "none" }}
+								>
+									All Time
+								</MenuItemOption>
+								<MenuItemOption
+									value="curr-month"
+									_focus={{ outline: "none" }}
+								>
+									Current Month
+								</MenuItemOption>
+							</MenuOptionGroup>
+						</MenuList>
+					</Menu>
 				</Flex>
 			</Flex>
 		</Box>
@@ -134,13 +188,14 @@ const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
 
 interface NavItemProps extends FlexProps {
 	icon: IconType;
+	path: String;
 	children: String;
 }
 
-const NavItem = ({ icon, children, ...rest }: NavItemProps) => {
+const NavItem = ({ icon, path, children, ...rest }: NavItemProps) => {
 	return (
 		<Link
-			href="#"
+			href={path as string}
 			style={{ textDecoration: "none" }}
 			_focus={{ boxShadow: "none" }}
 		>
@@ -179,9 +234,8 @@ interface MobileProps extends FlexProps {
 const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
 	return (
 		<Flex
-			ml={{ base: 0, md: 60 }}
-			px={{ base: 4, md: 24 }}
-			// height="20"
+			ml={{ base: 0, lg: 60 }}
+			px={{ base: 2, md: 4, lg: 24 }}
 			py={5}
 			alignItems="center"
 			bg={useColorModeValue("white", "gray.900")}
@@ -199,11 +253,11 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
 
 			<Text
 				fontSize="2xl"
-				ml="8"
+				ml={{ base: 4, lg: 8 }}
 				fontFamily="monospace"
 				fontWeight="bold"
 			>
-				Logo
+				Budgeter
 			</Text>
 		</Flex>
 	);
