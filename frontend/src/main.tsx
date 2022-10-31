@@ -20,7 +20,17 @@ const theme = extendTheme({
 	fonts: {
 		body: `'Inter', sans-serif`,
 	},
+	components: {
+		Button: {
+			baseStyle: {
+				_focus: {
+					outline: "none",
+				},
+			},
+		},
+	},
 });
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
 	<React.StrictMode>
 		<ChakraProvider theme={theme}>
