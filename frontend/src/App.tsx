@@ -1,11 +1,13 @@
+import { Router } from "@reach/router";
 import { Navbar } from "./components";
-import { Home } from "./pages";
+import { Home, Error } from "./pages";
 
 function App() {
 	return (
-		<Navbar>
-			<Home />
-		</Navbar>
+		<Router>
+			<Home path="/" />
+			<Error default={true} />
+		</Router>
 	);
 }
 
