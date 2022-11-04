@@ -19,7 +19,7 @@ export const Error = () => {
 		>
 			<Center maxH={"100vh"} h="full">
 				<Stack
-					direction={["column", "row"]}
+					direction="row"
 					spacing="2"
 					divider={
 						<StackDivider
