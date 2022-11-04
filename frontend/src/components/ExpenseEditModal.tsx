@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
 	Button,
 	FormControl,
@@ -20,20 +20,19 @@ import {
 	Tag,
 	TagLeftIcon,
 	TagLabel,
-	VStack,
-	HStack,
 	Flex,
 	useColorModeValue,
 	Box,
 	useToast,
 } from "@chakra-ui/react";
 import * as Fi from "react-icons/fi";
+import { parseAmount, parseDate } from "../utils";
 
 type displayData = {
-	date: string;
-	time: string;
+	dateTime: string;
 	description: string;
 	amount: string;
+	isShared: boolean;
 };
 
 interface Props {
@@ -43,12 +42,16 @@ interface Props {
 }
 
 export const ExpenseEditModal = ({ onClose, isOpen, displayData }: Props) => {
-	const format = (val: string) => `₹` + val;
 	const parse = (val: string) => val.replace(/^\$/, "");
 
 	const toast = useToast();
+	const [value, setValue] = React.useState(displayData?.amount);
 
-	const [value, setValue] = React.useState(displayData.amount);
+	const dateTime = parseDate(displayData!?.dateTime);
+
+	useEffect(() => {
+		setValue(displayData?.amount);
+	}, [displayData]);
 
 	return (
 		<>
@@ -66,7 +69,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, displayData }: Props) => {
 									verticalAlign: "baseline",
 								}}
 							>
-								<Text fontSize={"md"}>{displayData.date}</Text>
+								<Text fontSize={"md"}>{dateTime.date}</Text>
 								<Text
 									fontSize={"sm"}
 									color={useColorModeValue(
@@ -75,26 +78,35 @@ export const ExpenseEditModal = ({ onClose, isOpen, displayData }: Props) => {
 									)}
 									mt={0.5}
 								>
-									{displayData.time}
+									{dateTime.time}
 								</Text>
 							</Text>
 							<Box>
 								<Tag
 									size={"md"}
 									variant="subtle"
+									rounded={"full"}
 									colorScheme="telegram"
 								>
 									<TagLeftIcon boxSize="12px">
-										<Fi.FiUser size={"24px"} />
+										{displayData?.isShared ? (
+											<Fi.FiUsers size={"24px"} />
+										) : (
+											<Fi.FiUser size={"24px"} />
+										)}
 									</TagLeftIcon>
-									<TagLabel>Self</TagLabel>
+									<TagLabel>
+										{displayData?.isShared
+											? "Shared"
+											: "Self"}
+									</TagLabel>
 								</Tag>
 							</Box>
 						</Flex>
 
 						<FormControl mt={4}>
 							<FormLabel>Description</FormLabel>
-							<Input placeholder={displayData.description} />
+							<Input placeholder={displayData?.description} />
 						</FormControl>
 						<FormControl mt={4}>
 							<FormLabel>Amount</FormLabel>
@@ -102,7 +114,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, displayData }: Props) => {
 								onChange={(valueString) =>
 									setValue(parse(valueString))
 								}
-								value={format(value)}
+								value={parseAmount(value)}
 								step={100}
 							>
 								<NumberInputField />
