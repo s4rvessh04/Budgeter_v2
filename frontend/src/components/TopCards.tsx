@@ -7,6 +7,9 @@ import {
 	StatArrow,
 	useColorModeValue,
 } from "@chakra-ui/react";
+import { faker } from "@faker-js/faker";
+import { useAtom } from "jotai";
+import { expenseAmountAtom } from "../atoms";
 
 type CardData<T> = {
 	title: T;
@@ -15,6 +18,8 @@ type CardData<T> = {
 };
 
 export const TopCards = (data?: CardData<string>[]) => {
+	const [expenseAmount] = useAtom(expenseAmountAtom);
+
 	return (
 		<StatGroup columnGap={5} mb={5} display={{ base: "block", md: "flex" }}>
 			{[
@@ -22,22 +27,34 @@ export const TopCards = (data?: CardData<string>[]) => {
 					key: "a",
 					type: "inc",
 					title: "Expense",
-					amount: "1000",
-					changePercentage: "44.22",
+					amount: `₹${expenseAmount}`,
+					changePercentage: faker.datatype.float({
+						min: 10,
+						max: 100,
+						precision: 0.01,
+					}),
 				},
 				{
 					key: "b",
 					type: "inc",
 					title: "Balance",
-					amount: "1000",
-					changePercentage: "24.00",
+					amount: `₹${faker.finance.amount()}`,
+					changePercentage: faker.datatype.float({
+						min: 10,
+						max: 100,
+						precision: 0.01,
+					}),
 				},
 				{
 					key: "c",
 					type: "dec",
-					title: "Savings",
-					amount: "1200",
-					changePercentage: "50.00",
+					title: "Avg. Monthly Spending",
+					amount: `₹${faker.finance.amount()}`,
+					changePercentage: faker.datatype.float({
+						min: 10,
+						max: 100,
+						precision: 0.01,
+					}),
 				},
 			].map((item) => (
 				<Stat
