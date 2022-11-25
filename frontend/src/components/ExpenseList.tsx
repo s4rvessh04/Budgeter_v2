@@ -265,7 +265,7 @@ export const ExpenseList = () => {
 									alignItems={"center"}
 									justifyContent={"start"}
 								>
-									20
+									{oweExpenses?.length}
 								</GridItem>
 							</Grid>
 						</Box>
@@ -376,7 +376,7 @@ export const ExpenseList = () => {
 									alignItems={"center"}
 									justifyContent={"end"}
 								>
-									₹{oweAmountSum}
+									₹{dueAmountSum}
 								</GridItem>
 								<GridItem
 									colSpan={1}
@@ -384,7 +384,7 @@ export const ExpenseList = () => {
 									alignItems={"center"}
 									justifyContent={"start"}
 								>
-									20
+									{dueExpenses?.length}
 								</GridItem>
 							</Grid>
 						</Box>
