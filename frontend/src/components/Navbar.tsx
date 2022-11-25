@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Link as ReachLink } from "@reach/router";
+import { Link as WouterLink, useRoute } from "wouter";
 import {
 	IconButton,
 	Box,
@@ -7,7 +7,6 @@ import {
 	Flex,
 	Icon,
 	useColorModeValue,
-	Link,
 	Drawer,
 	DrawerContent,
 	Text,
@@ -23,14 +22,15 @@ import {
 } from "@chakra-ui/react";
 import {
 	FiHome,
-	FiTrendingUp,
-	FiCompass,
-	FiStar,
+	FiUsers,
 	FiSettings,
 	FiMenu,
 	FiSun,
 	FiMoon,
-	FiMoreHorizontal,
+	FiPlus,
+	FiTool,
+	FiLogOut,
+	FiBell,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 
@@ -41,7 +41,9 @@ interface LinkItemProps {
 }
 
 const LinkItems: Array<LinkItemProps> = [
+	{ name: "New Expense", path: "/new", icon: FiPlus },
 	{ name: "Home", path: "/", icon: FiHome },
+	{ name: "Friends", path: "/friends", icon: FiUsers },
 	{ name: "Settings", path: "/settings", icon: FiSettings },
 ];
 
@@ -80,17 +82,51 @@ export function Navbar({ children }: { children: ReactNode }) {
 	);
 }
 
-const NavLink = (props: any) => {
-	<ReachLink
-		{...props}
-		getProps={({ isCurrent }) => {
-			return {
-				style: {
-					color: isCurrent ? "red" : "blue",
-				},
-			};
-		}}
-	/>;
+interface NavItemProps extends FlexProps {
+	icon: IconType;
+	path: string;
+	children: String;
+}
+
+const NavLink = ({ icon, path, children, ...rest }: NavItemProps) => {
+	const [isActive] = useRoute(path);
+
+	return (
+		<WouterLink href={path}>
+			<Flex
+				style={{
+					textDecoration: "none",
+				}}
+				bg={isActive ? useColorModeValue("gray.900", "gray.700") : ""}
+				color={isActive ? "white" : useColorModeValue("black", "white")}
+				_focus={{ boxShadow: "none" }}
+				align="center"
+				p="4"
+				mx="4"
+				mb="2"
+				borderRadius="lg"
+				role="group"
+				cursor="pointer"
+				_hover={{
+					bg: useColorModeValue("gray.900", "gray.700"),
+					color: "white",
+				}}
+				{...rest}
+			>
+				{icon && (
+					<Icon
+						mr="4"
+						fontSize="16"
+						_groupHover={{
+							color: "white",
+						}}
+						as={icon}
+					/>
+				)}
+				{children}
+			</Flex>
+		</WouterLink>
+	);
 };
 
 interface SidebarProps extends BoxProps {
@@ -117,11 +153,7 @@ const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
 					mx="8"
 					justifyContent="space-between"
 				>
-					<Text
-						fontSize="2xl"
-						fontFamily="monospace"
-						fontWeight="bold"
-					>
+					<Text fontSize="2xl" fontWeight="bold">
 						Budgeter
 					</Text>
 					<CloseButton
@@ -131,33 +163,42 @@ const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
 				</Flex>
 				<Flex flexDirection={"column"} flex="1">
 					{LinkItems.map((link) => (
-						<NavItem
+						<NavLink
 							key={link.name}
 							icon={link.icon}
 							path={link.path}
 						>
 							{link.name}
-						</NavItem>
+						</NavLink>
 					))}
 				</Flex>
 				<Flex
-					justifyContent={"space-between"}
+					justifyContent={"space-around"}
 					mb={{ base: 14, lg: 4 }}
 					py="5"
-					mx="8"
+					px={{ base: "4", lg: "4" }}
+					gap={4}
 				>
 					<IconButton
 						onClick={toggleColorMode}
 						aria-label="Theme toggler"
 						icon={colorMode === "dark" ? <FiSun /> : <FiMoon />}
 						_focus={{ outline: "none" }}
+						w={"full"}
+					/>
+
+					<IconButton
+						aria-label="notification-btn"
+						icon={<FiBell />}
+						w={"full"}
 					/>
 					<Menu closeOnSelect={true}>
 						<MenuButton
+							w={"full"}
 							_focus={{ outline: "none" }}
 							as={IconButton}
 						>
-							<FiMoreHorizontal style={{ margin: "auto" }} />
+							<FiTool style={{ margin: "auto" }} />
 						</MenuButton>
 						<MenuList minWidth="240px" p="1" mb={3.5}>
 							<MenuOptionGroup
@@ -180,51 +221,15 @@ const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
 							</MenuOptionGroup>
 						</MenuList>
 					</Menu>
+					<IconButton
+						w={"full"}
+						aria-label="log-out-btn"
+						icon={<FiLogOut />}
+						colorScheme="red"
+					/>
 				</Flex>
 			</Flex>
 		</Box>
-	);
-};
-
-interface NavItemProps extends FlexProps {
-	icon: IconType;
-	path: String;
-	children: String;
-}
-
-const NavItem = ({ icon, path, children, ...rest }: NavItemProps) => {
-	return (
-		<Link
-			href={path as string}
-			style={{ textDecoration: "none" }}
-			_focus={{ boxShadow: "none" }}
-		>
-			<Flex
-				align="center"
-				p="4"
-				mx="4"
-				borderRadius="lg"
-				role="group"
-				cursor="pointer"
-				_hover={{
-					bg: useColorModeValue("gray.900", "gray.700"),
-					color: "white",
-				}}
-				{...rest}
-			>
-				{icon && (
-					<Icon
-						mr="4"
-						fontSize="16"
-						_groupHover={{
-							color: "white",
-						}}
-						as={icon}
-					/>
-				)}
-				{children}
-			</Flex>
-		</Link>
 	);
 };
 
@@ -251,12 +256,7 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
 				icon={<FiMenu />}
 			/>
 
-			<Text
-				fontSize="2xl"
-				ml={{ base: 4, lg: 8 }}
-				fontFamily="monospace"
-				fontWeight="bold"
-			>
+			<Text fontSize="2xl" ml={{ base: 4, lg: 8 }} fontWeight="bold">
 				Budgeter
 			</Text>
 		</Flex>

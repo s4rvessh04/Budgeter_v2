@@ -1,20 +1,19 @@
 import { QueryClient, QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
-import { RouteComponentProps, Router } from "@reach/router";
-import { Home, Error } from "./pages";
+import { Route, Switch } from "wouter";
+import { Home, Error, Friends, NewExpense } from "./pages";
 
 const queryClient = new QueryClient();
-
-const HomePage = (props: RouteComponentProps) => <Home />;
-const ErrorPage = (props: RouteComponentProps) => <Error />;
 
 function App() {
 	return (
 		<QueryClientProvider client={queryClient}>
-			<Router>
-				<HomePage path="/" />
-				<ErrorPage default={true} />
-			</Router>
+			<Switch>
+				<Route path="/" component={Home} />
+				<Route path="/friends" component={Friends} />
+				<Route path="/new" component={NewExpense} />
+				<Route component={Error} />
+			</Switch>
 			<ReactQueryDevtools initialIsOpen={false} />
 		</QueryClientProvider>
 	);
