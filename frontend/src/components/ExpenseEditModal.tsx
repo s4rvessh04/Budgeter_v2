@@ -24,8 +24,10 @@ import {
 	useColorModeValue,
 	Box,
 	useToast,
+	IconButton,
+	Select,
 } from "@chakra-ui/react";
-import * as Fi from "react-icons/fi";
+import { FiUser, FiUsers, FiX } from "react-icons/fi";
 import { parseAmount, parseDate } from "../utils";
 
 type displayData = {
@@ -90,9 +92,9 @@ export const ExpenseEditModal = ({ onClose, isOpen, displayData }: Props) => {
 								>
 									<TagLeftIcon boxSize="12px">
 										{displayData?.isShared ? (
-											<Fi.FiUsers size={"24px"} />
+											<FiUsers size={"24px"} />
 										) : (
-											<Fi.FiUser size={"24px"} />
+											<FiUser size={"24px"} />
 										)}
 									</TagLeftIcon>
 									<TagLabel>
@@ -124,6 +126,63 @@ export const ExpenseEditModal = ({ onClose, isOpen, displayData }: Props) => {
 								</NumberInputStepper>
 							</NumberInput>
 						</FormControl>
+						{displayData?.isShared ? (
+							<FormControl isRequired mt={4}>
+								<FormLabel>With</FormLabel>
+								{Array(3)
+									.fill(0)
+									.map((key, i) => (
+										<Flex gap="4" mb="4">
+											<Select>
+												<option value="option1">
+													Name 1
+												</option>
+												<option value="option2">
+													Name 2
+												</option>
+												<option value="option3">
+													Name 3
+												</option>
+											</Select>
+											<NumberInput
+												step={100}
+												defaultValue={0}
+												min={0}
+											>
+												<NumberInputField />
+												<NumberInputStepper>
+													<NumberIncrementStepper />
+													<NumberDecrementStepper />
+												</NumberInputStepper>
+											</NumberInput>
+											<IconButton
+												aria-label="remove-btn"
+												colorScheme={"gray"}
+												icon={<FiX />}
+												// onClick={() =>
+												// 	handleSharedExpenseUserCount(
+												// 		"dec"
+												// 	)
+												// }
+											/>
+										</Flex>
+									))}
+								<Flex>
+									<Button
+										w={"full"}
+										variant="ghost"
+										colorScheme={"blue"}
+										// onClick={() =>
+										// 	handleSharedExpenseUserCount("inc")
+										// }
+									>
+										Add new
+									</Button>
+								</Flex>
+							</FormControl>
+						) : (
+							""
+						)}
 					</ModalBody>
 
 					<ModalFooter>
