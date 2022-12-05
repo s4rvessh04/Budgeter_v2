@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React from "react";
 import { faker } from "@faker-js/faker";
 import axios from "axios";
 import {
@@ -25,13 +25,15 @@ import { useAtom } from "jotai";
 
 import { ExpenseEditModal } from "./ExpenseEditModal";
 import { expenseAmountAtom } from "../atoms/Home";
+import { parseDate } from "../utils";
+import { IExpense, ISharedExpense } from "../types";
 
 export const ExpenseTable = () => {
 	const { isOpen, onOpen, onClose } = useDisclosure();
 
-	const [loaded, setLoaded] = useState<boolean>(false);
-	const [expenses, setExpenses] = useState<any[]>();
-	const [modalData, setModalData] = useState<any>();
+	const [loaded, setLoaded] = React.useState<boolean>(false);
+	const [expenses, setExpenses] = React.useState<IExpense[]>();
+	const [modalData, setModalData] = React.useState<IExpense>();
 	const [expenseAmount, setExpenseAmount] = useAtom(expenseAmountAtom);
 
 	const { isLoading, error, data, isFetching } = useQuery(["data"], () => {
@@ -41,47 +43,60 @@ export const ExpenseTable = () => {
 		return data;
 	});
 
-	useMemo(
+	React.useMemo(
 		() =>
 			setExpenseAmount(
-				expenses
-					?.reduce((prev, curr) => {
-						return prev + parseFloat(curr.amount);
-					}, 0)
-					.toFixed(2)
+				parseFloat(
+					expenses!
+						?.reduce((prev, curr) => prev + curr.amount, 0)
+						.toFixed(2)
+				)
 			),
 		[expenses]
 	);
 
-	useEffect(() => {
-		setExpenses(createData(8));
+	React.useEffect(() => {
+		setExpenses(createData(10));
 		setLoaded(true);
 		return;
 	}, []);
 
-	function createData(count: number) {
-		let items: any[] = [];
+	function createData(count: number): IExpense[] {
+		let items: IExpense[] = [];
 
 		for (let i = 0; i < count; i++) {
-			items.push({
-				dateTime: faker.date.past().toUTCString(),
+			let expense: IExpense = {
+				id: faker.database.mongodbObjectId(),
+				userId: faker.datatype.number().toString(),
 				description: faker.finance.transactionDescription(),
-				amount: faker.finance.amount(),
+				dateTime: faker.date.past().toUTCString(),
+				lastUpdateTime: faker.date.recent().toUTCString(),
+				amount: parseFloat(faker.finance.amount()),
 				isShared: faker.datatype.boolean(),
-			});
+				sharedExpenses: [],
+			};
+
+			let sharedExpenses: ISharedExpense[] = [];
+
+			for (let j = 0; j < parseInt(faker.random.numeric()); j++) {
+				sharedExpenses.push({
+					id: faker.database.mongodbObjectId(),
+					expenseId: expense.id,
+					lastUpdateTime: faker.date.recent().toUTCString(),
+					mainUserId: expense.userId,
+					sharedUserId: faker.name.fullName(),
+					sharedUserAmount: parseFloat(faker.finance.amount()),
+					status:
+						faker.datatype.boolean() === true ? "paid" : "unpaid",
+				});
+			}
+			expense.sharedExpenses = sharedExpenses;
+			items.push(expense);
 		}
 		return items;
 	}
 
-	function parseDate(dateString: string): { date: String; time: String } {
-		const utcString: Date = new Date(dateString);
-		return {
-			date: utcString.toDateString(),
-			time: utcString.toTimeString().slice(0, 5),
-		};
-	}
-
-	function handleModalData(data: any) {
+	function handleModalData(data: IExpense): void {
 		setModalData(data);
 		return onOpen();
 	}
@@ -349,7 +364,7 @@ export const ExpenseTable = () => {
 			<ExpenseEditModal
 				onClose={onClose}
 				isOpen={isOpen}
-				displayData={modalData}
+				data={modalData}
 			/>
 		</>
 	);

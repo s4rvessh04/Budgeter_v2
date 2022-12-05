@@ -4,42 +4,34 @@ import {
 	Flex,
 	Grid,
 	GridItem,
-	Icon,
 	Tab,
 	TabList,
 	TabPanel,
 	TabPanels,
 	Tabs,
-	Tag,
-	TagLabel,
 	useColorModeValue,
 	useDisclosure,
 } from "@chakra-ui/react";
-import { HiCheckCircle, HiExclamationCircle } from "react-icons/hi";
-import { OweModal, DueModal } from "../components";
+import { OweModal, SettleModal } from "../components";
 import { faker } from "@faker-js/faker";
 import { useQuery } from "react-query";
 import { useAtom } from "jotai";
 import axios from "axios";
-import { dueAmountAtom, oweAmountAtom } from "../atoms";
-
-type displayData = {
-	name: string;
-	dateTime: string;
-	description: string;
-	amount: string;
-	status: string;
-};
+import { settleExpensesAmountAtom, oweExpensesAmountAtom } from "../atoms";
+import { parseAmount } from "../utils";
+import { IExpenseList } from "../types/modals.component.types";
 
 export const ExpenseList = () => {
-	const oweModalDisclosure = useDisclosure();
-	const dueModalDisclosure = useDisclosure();
+	const oweExpensesModalDisclosure = useDisclosure();
+	const settleExpensesModalDisclosure = useDisclosure();
 
-	const [oweExpenses, setOweExpenses] = useState<any[]>();
-	const [dueExpenses, setDueExpenses] = useState<any[]>();
-	const [oweAmountSum, setOweAmountSum] = useAtom(oweAmountAtom);
-	const [dueAmountSum, setDueAmountSum] = useAtom(dueAmountAtom);
-	const [modalData, setModalData] = useState<displayData>();
+	const [oweExpenses, setOweExpenses] = useState<IExpenseList[]>();
+	const [settleExpenses, setSettleExpenses] = useState<IExpenseList[]>();
+	const [oweExpensesSum, setOweExpensesSum] = useAtom(oweExpensesAmountAtom);
+	const [settleExpensesSum, setSettleExpensesSum] = useAtom(
+		settleExpensesAmountAtom
+	);
+	const [modalData, setModalData] = useState<IExpenseList>();
 
 	const { isLoading, error, data, isFetching } = useQuery(["owe-due"], () => {
 		const data = axios
@@ -48,61 +40,96 @@ export const ExpenseList = () => {
 		return data;
 	});
 
-	useMemo(
-		() =>
-			setOweAmountSum(
-				oweExpenses
-					?.reduce((prev, curr) => {
-						return prev + parseFloat(curr.amount);
-					}, 0)
-					.toFixed(2)
-			),
-		[oweExpenses]
-	);
+	useMemo(() => {
+		let oweSum = 0;
 
-	useMemo(
-		() =>
-			setDueAmountSum(
-				dueExpenses
-					?.reduce((prev, curr) => {
-						return prev + parseFloat(curr.amount);
-					}, 0)
+		oweExpenses?.forEach((item) => {
+			let expensesSum: number = parseFloat(
+				item.expenses
+					.reduce((prev, curr) => prev + curr.amount, 0)
 					.toFixed(2)
-			),
-		[dueExpenses]
-	);
+			);
+
+			item.totalAmount = expensesSum;
+			oweSum += expensesSum;
+		});
+
+		setOweExpensesSum(parseFloat(oweSum.toFixed(2)));
+	}, [oweExpenses]);
+
+	useMemo(() => {
+		let settleSum = 0;
+
+		settleExpenses?.forEach((item) => {
+			let expensesSum: number = parseFloat(
+				item.expenses
+					.reduce((prev, curr) => prev + curr.amount, 0)
+					.toFixed(2)
+			);
+
+			item.totalAmount = expensesSum;
+			settleSum += expensesSum;
+		});
+
+		setSettleExpensesSum(parseFloat(settleSum.toFixed(2)));
+	}, [settleExpenses]);
 
 	useEffect(() => {
-		setDueExpenses(createOweData(10));
-		setOweExpenses(createDueData(10));
+		setSettleExpenses(createSettleExpenses(10));
+		setOweExpenses(createOweExpenses(10));
 		return;
 	}, []);
 
-	const createOweData = (count: number) => {
-		let items: any[] = [];
+	const createOweExpenses = (count: number): IExpenseList[] => {
+		let items: IExpenseList[] = [];
 
 		for (let i = 0; i < count; i++) {
+			let expenses = [];
+
+			for (let j = 0; j < parseInt(faker.random.numeric(1)); j++) {
+				let id = faker.database.mongodbObjectId();
+				let dateTime = faker.date.past().toUTCString();
+				let description = faker.finance.transactionDescription();
+				let amount = parseFloat(faker.finance.amount());
+
+				expenses.push({
+					id: id,
+					dateTime: dateTime,
+					description: description,
+					amount: amount,
+				});
+			}
+
 			items.push({
+				id: faker.database.mongodbObjectId(),
 				name: faker.name.fullName(),
-				dateTime: faker.date.past().toUTCString(),
-				description: faker.finance.transactionDescription(),
-				amount: faker.finance.amount(),
-				status: faker.datatype.boolean() === true ? "Paid" : "Unpaid",
+				totalAmount: parseFloat(faker.finance.amount()),
+				expenses: expenses,
 			});
 		}
 		return items;
 	};
 
-	const createDueData = (count: number) => {
-		let items: any[] = [];
+	const createSettleExpenses = (count: number) => {
+		let items: IExpenseList[] = [];
 
 		for (let i = 0; i < count; i++) {
+			let expenses = [];
+
+			for (let j = 0; j < parseInt(faker.random.numeric(1)); j++) {
+				expenses.push({
+					id: faker.database.mongodbObjectId(),
+					dateTime: faker.date.past().toUTCString(),
+					description: faker.finance.transactionDescription(),
+					amount: parseFloat(faker.finance.amount()),
+				});
+			}
+
 			items.push({
+				id: faker.database.mongodbObjectId(),
 				name: faker.name.fullName(),
-				dateTime: faker.date.past().toUTCString(),
-				description: faker.finance.transactionDescription(),
-				amount: faker.finance.amount(),
-				status: faker.datatype.boolean() === true ? "Paid" : "Unpaid",
+				totalAmount: parseFloat(faker.finance.amount()),
+				expenses: expenses,
 			});
 		}
 		return items;
@@ -110,12 +137,12 @@ export const ExpenseList = () => {
 
 	function handleOweModal(data: any) {
 		setModalData(data);
-		return oweModalDisclosure.onOpen();
+		return oweExpensesModalDisclosure.onOpen();
 	}
 
-	function handleDueModal(data: any) {
+	function handleSettleModal(data: any) {
 		setModalData(data);
-		return dueModalDisclosure.onOpen();
+		return settleExpensesModalDisclosure.onOpen();
 	}
 
 	return (
@@ -125,7 +152,7 @@ export const ExpenseList = () => {
 					<TabList
 						justifyContent={"space-between"}
 						gap={2}
-						bg={useColorModeValue("gray.200", "gray.800")}
+						bg={useColorModeValue("gray.100", "gray.800")}
 						p={1}
 						rounded={"lg"}
 						h="min-content"
@@ -137,7 +164,7 @@ export const ExpenseList = () => {
 							}}
 							_focus={{ outline: "none" }}
 						>
-							Owe
+							Settle
 						</Tab>
 						<Tab
 							w={"50%"}
@@ -146,14 +173,14 @@ export const ExpenseList = () => {
 							}}
 							_focus={{ outline: "none" }}
 						>
-							Due
+							Owe
 						</Tab>
 					</TabList>
 				</Box>
 				<TabPanels flex={"1"} overflowY={"auto"}>
 					<TabPanel p="0" pt="2" h="full">
 						<Box h="full" overflow={"auto"}>
-							{oweExpenses?.map((item, idx) => (
+							{settleExpenses?.map((item, idx) => (
 								<Grid
 									key={idx}
 									templateColumns="repeat(4, 1fr)"
@@ -166,7 +193,7 @@ export const ExpenseList = () => {
 										"gray.700"
 									)}
 									w="full"
-									onClick={() => handleOweModal(item)}
+									onClick={() => handleSettleModal(item)}
 									_hover={{
 										bgColor: useColorModeValue(
 											"gray.100",
@@ -176,53 +203,22 @@ export const ExpenseList = () => {
 									}}
 								>
 									<GridItem
-										colSpan={2}
+										colSpan={3}
 										display="flex"
 										alignItems={"center"}
 										justifyContent={"start"}
 										noOfLines={2}
+										fontWeight="medium"
 									>
 										{item.name}
 									</GridItem>
 									<GridItem
-										colSpan={1}
 										fontWeight={"semibold"}
-										display="flex"
-										alignItems={"center"}
-										justifyContent={"end"}
-									>
-										₹{item.amount}
-									</GridItem>
-									<GridItem
 										colSpan={1}
 										display="flex"
-										alignItems={"center"}
-										justifyContent={"start"}
+										justifyContent="end"
 									>
-										<Tag
-											size="md"
-											colorScheme={
-												item.status.toLowerCase() ===
-												"paid"
-													? "green"
-													: "red"
-											}
-											borderRadius="full"
-										>
-											<Icon
-												as={
-													item.status.toLowerCase() ===
-													"paid"
-														? HiCheckCircle
-														: HiExclamationCircle
-												}
-												ml={-1}
-												h={"4"}
-												w={"4"}
-												mr={1}
-											/>
-											<TagLabel>{item.status}</TagLabel>
-										</Tag>
+										{parseAmount(item.totalAmount)}
 									</GridItem>
 								</Grid>
 							))}
@@ -244,7 +240,7 @@ export const ExpenseList = () => {
 								)}
 							>
 								<GridItem
-									colSpan={2}
+									colSpan={3}
 									display="flex"
 									alignItems={"center"}
 									justifyContent={"start"}
@@ -257,22 +253,14 @@ export const ExpenseList = () => {
 									alignItems={"center"}
 									justifyContent={"end"}
 								>
-									₹{oweAmountSum}
-								</GridItem>
-								<GridItem
-									colSpan={1}
-									display="flex"
-									alignItems={"center"}
-									justifyContent={"start"}
-								>
-									{oweExpenses?.length}
+									₹{settleExpensesSum}
 								</GridItem>
 							</Grid>
 						</Box>
 					</TabPanel>
 					<TabPanel p="0" pt="2" h="full">
 						<Box h="full" overflow={"auto"}>
-							{dueExpenses?.map((item, idx) => (
+							{oweExpenses?.map((expense, idx) => (
 								<Grid
 									key={idx}
 									templateColumns="repeat(4, 1fr)"
@@ -285,7 +273,7 @@ export const ExpenseList = () => {
 										"gray.700"
 									)}
 									w="full"
-									onClick={() => handleDueModal(item)}
+									onClick={() => handleOweModal(expense)}
 									_hover={{
 										bgColor: useColorModeValue(
 											"gray.100",
@@ -295,53 +283,22 @@ export const ExpenseList = () => {
 									}}
 								>
 									<GridItem
-										colSpan={2}
+										colSpan={3}
 										display="flex"
 										alignItems={"center"}
 										justifyContent={"start"}
 										noOfLines={2}
+										fontWeight="medium"
 									>
-										{item.name}
+										{expense.name}
 									</GridItem>
 									<GridItem
-										colSpan={1}
 										fontWeight={"semibold"}
-										display="flex"
-										alignItems={"center"}
-										justifyContent={"end"}
-									>
-										₹{item.amount}
-									</GridItem>
-									<GridItem
 										colSpan={1}
 										display="flex"
-										alignItems={"center"}
-										justifyContent={"start"}
+										justifyContent="end"
 									>
-										<Tag
-											size="md"
-											colorScheme={
-												item.status.toLowerCase() ===
-												"paid"
-													? "green"
-													: "red"
-											}
-											borderRadius="full"
-										>
-											<Icon
-												as={
-													item.status.toLowerCase() ===
-													"paid"
-														? HiCheckCircle
-														: HiExclamationCircle
-												}
-												ml={-1}
-												h={"4"}
-												w={"4"}
-												mr={1}
-											/>
-											<TagLabel>{item.status}</TagLabel>
-										</Tag>
+										{parseAmount(expense.totalAmount)}
 									</GridItem>
 								</Grid>
 							))}
@@ -363,7 +320,7 @@ export const ExpenseList = () => {
 								)}
 							>
 								<GridItem
-									colSpan={2}
+									colSpan={3}
 									display="flex"
 									alignItems={"center"}
 									justifyContent={"start"}
@@ -376,15 +333,7 @@ export const ExpenseList = () => {
 									alignItems={"center"}
 									justifyContent={"end"}
 								>
-									₹{dueAmountSum}
-								</GridItem>
-								<GridItem
-									colSpan={1}
-									display="flex"
-									alignItems={"center"}
-									justifyContent={"start"}
-								>
-									{dueExpenses?.length}
+									₹{oweExpensesSum}
 								</GridItem>
 							</Grid>
 						</Box>
@@ -392,14 +341,14 @@ export const ExpenseList = () => {
 				</TabPanels>
 			</Flex>
 			<OweModal
-				onClose={oweModalDisclosure.onClose}
-				isOpen={oweModalDisclosure.isOpen}
-				displayData={modalData}
+				onClose={oweExpensesModalDisclosure.onClose}
+				isOpen={oweExpensesModalDisclosure.isOpen}
+				data={modalData}
 			/>
-			<DueModal
-				onClose={dueModalDisclosure.onClose}
-				isOpen={dueModalDisclosure.isOpen}
-				displayData={modalData}
+			<SettleModal
+				onClose={settleExpensesModalDisclosure.onClose}
+				isOpen={settleExpensesModalDisclosure.isOpen}
+				data={modalData}
 			/>
 		</Tabs>
 	);
