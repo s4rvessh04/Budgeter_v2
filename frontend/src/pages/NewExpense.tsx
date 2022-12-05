@@ -4,7 +4,6 @@ import {
 	Container,
 	Flex,
 	FormControl,
-	FormHelperText,
 	FormLabel,
 	HStack,
 	IconButton,

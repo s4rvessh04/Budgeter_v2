@@ -6,7 +6,7 @@ export function parseDate(dateString: string): { date: string; time: string } {
 	};
 }
 
-export function parseAmount(amount?: string): string {
-	amount!?.replace(/^\$/, "");
+export function parseAmount(amount?: number): string {
+	// amount!?.replace(/^\$/, "");
 	return `₹` + amount;
 }

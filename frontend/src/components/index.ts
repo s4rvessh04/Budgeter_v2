@@ -3,4 +3,7 @@ export * from "./TopCards";
 export * from "./ExpenseTable";
 export * from "./ExpenseEditModal";
 export * from "./OweModal";
-export * from "./DueModal";
+export * from "./SettleModal";
+export * from "./NotificationsModal";
+export * from "./QuickSettingsModal";
+export * from "./NewExpenseModal";

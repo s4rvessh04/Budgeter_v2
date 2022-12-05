@@ -1,7 +1,5 @@
 import {
 	Button,
-	FormControl,
-	FormLabel,
 	Modal,
 	ModalBody,
 	ModalCloseButton,
@@ -12,100 +10,86 @@ import {
 	Text,
 	useColorModeValue,
 	useToast,
-	Select,
+	Box,
+	Tag,
+	TagLabel,
+	TagLeftIcon,
+	Flex,
 } from "@chakra-ui/react";
-import { parseDate } from "../utils";
-
-type displayData = {
-	name: string;
-	dateTime: string;
-	description: string;
-	amount: string;
-	status: string;
-};
+import { parseAmount, parseDate } from "../utils";
+import { IExpenseList } from "../types/modals.component.types";
+import { FiAlertCircle, FiCheckCircle } from "react-icons/fi";
 
 interface Props {
 	onClose: () => void;
 	isOpen: boolean;
-	displayData?: displayData;
+	data?: IExpenseList;
 }
 
-export const OweModal = ({ onClose, isOpen, displayData }: Props) => {
-	const toast = useToast();
-	const dateTime = parseDate(displayData!?.dateTime);
+export const OweModal = ({ onClose, isOpen, data }: Props) => {
+	const TOAST = useToast();
+	const TOTAL_AMOUNT = parseAmount(data!?.totalAmount);
 
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
 			<ModalOverlay />
-			<ModalContent>
+			<ModalContent bg={useColorModeValue("white", "gray.800")}>
 				<ModalHeader>
-					{displayData?.name}
-					<Text
-						fontWeight={"semibold"}
-						fontSize="sm"
-						color={useColorModeValue("gray.500", "gray.400")}
-					>
-						{dateTime.date} - {dateTime.time}
+					<Text fontWeight={"semibold"} fontSize="xl">
+						{data?.name}
+					</Text>
+					<Text fontWeight={"semibold"} fontSize="lg">
+						{TOTAL_AMOUNT}
 					</Text>
 				</ModalHeader>
 				<ModalCloseButton _focus={{ outline: "none" }} />
-				<ModalBody mb={2}>
-					<Text
-						fontWeight="semibold"
-						textTransform={"capitalize"}
-						mb={1}
-					>
-						{displayData?.description}
-					</Text>
-					<Text fontSize={"2xl"} fontWeight="bold">
-						₹{displayData?.amount}
-					</Text>
-					<FormControl mt="4">
-						<FormLabel
-							fontWeight={"semibold"}
-							fontSize="sm"
-							color={useColorModeValue("gray.500", "gray.400")}
+				<ModalBody mb={2} px="2">
+					{data?.expenses.map((expense, idx) => (
+						<Box
+							key={idx}
+							bg={useColorModeValue("gray.50", "gray.700")}
+							border="1px"
+							rounded={"lg"}
+							borderColor={useColorModeValue(
+								"gray.200",
+								"gray.800"
+							)}
+							px="3"
+							py="2"
+							mb="2"
 						>
-							Status
-						</FormLabel>
-						<Select variant="filled" fontWeight={"semibold"}>
-							<option
-								value="unpaid"
-								selected={
-									displayData?.status.toLowerCase() ===
-									"unpaid"
-								}
+							<Text
+								fontWeight="medium"
+								fontSize={"sm"}
+								textTransform={"capitalize"}
+								mb={1}
 							>
-								Unpaid
-							</option>
-							<option
-								value="paid"
-								selected={
-									displayData?.status.toLowerCase() === "paid"
-								}
+								{parseDate(expense?.dateTime).date}
+							</Text>
+							<Text fontWeight={"medium"}>
+								{expense?.description}
+							</Text>
+							<Flex
+								display={"flex"}
+								justifyContent="space-between"
+								alignItems={"center"}
+								mt={2}
 							>
-								Paid
-							</option>
-						</Select>
-					</FormControl>
+								<Text fontSize={"lg"} fontWeight="semibold">
+									₹{expense?.amount}
+								</Text>
+								<Tag
+									rounded={"full"}
+									variant="subtle"
+									colorScheme={"red"}
+								>
+									<TagLeftIcon as={FiAlertCircle} />
+									<TagLabel>Unpaid</TagLabel>
+								</Tag>
+							</Flex>
+						</Box>
+					))}
 				</ModalBody>
-				<ModalFooter>
-					<Button
-						colorScheme="telegram"
-						mr={3}
-						onClick={() =>
-							toast({
-								title: `Saved successfully`,
-								position: "bottom",
-								isClosable: true,
-								status: "success",
-							}) && onClose()
-						}
-					>
-						Save
-					</Button>
-					<Button onClick={onClose}>Cancel</Button>
-				</ModalFooter>
 			</ModalContent>
 		</Modal>
 	);
