@@ -14,11 +14,6 @@ import {
 	BoxProps,
 	FlexProps,
 	useColorMode,
-	Menu,
-	MenuButton,
-	MenuList,
-	MenuOptionGroup,
-	MenuItemOption,
 } from "@chakra-ui/react";
 import {
 	FiHome,
@@ -31,8 +26,14 @@ import {
 	FiTool,
 	FiLogOut,
 	FiBell,
+	FiDollarSign,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
+import {
+	NotificationsModal,
+	QuickSettingsModal,
+	NewExpenseModal,
+} from "../components";
 
 interface LinkItemProps {
 	name: string;
@@ -41,9 +42,10 @@ interface LinkItemProps {
 }
 
 const LinkItems: Array<LinkItemProps> = [
-	{ name: "New Expense", path: "/new", icon: FiPlus },
+	// { name: "New Expense", path: "/new", icon: FiPlus },
 	{ name: "Home", path: "/", icon: FiHome },
 	{ name: "Friends", path: "/friends", icon: FiUsers },
+	{ name: "Expenses", path: "/expenses", icon: FiDollarSign },
 	{ name: "Settings", path: "/settings", icon: FiSettings },
 ];
 
@@ -54,6 +56,9 @@ export function Navbar({ children }: { children: ReactNode }) {
 		<Box
 			minH="100vh"
 			minW="100vw"
+			maxH="100vh"
+			maxW="100vh"
+			overflow="auto"
 			bg={useColorModeValue("gray.100", "gray.900")}
 		>
 			<SidebarContent
@@ -136,100 +141,129 @@ interface SidebarProps extends BoxProps {
 const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
 	const { colorMode, toggleColorMode } = useColorMode();
 
-	return (
-		<Box
-			bg={useColorModeValue("white", "gray.900")}
-			borderRight="1px"
-			borderRightColor={useColorModeValue("gray.200", "gray.700")}
-			w={{ base: "full", lg: 60 }}
-			pos="fixed"
-			h={"full"}
-			{...rest}
-		>
-			<Flex flexDirection={"column"} h="full">
-				<Flex
-					py="5"
-					alignItems="center"
-					mx="8"
-					justifyContent="space-between"
-				>
-					<Text fontSize="2xl" fontWeight="bold">
-						Budgeter
-					</Text>
-					<CloseButton
-						display={{ base: "flex", lg: "none" }}
-						onClick={onClose}
-					/>
-				</Flex>
-				<Flex flexDirection={"column"} flex="1">
-					{LinkItems.map((link) => (
-						<NavLink
-							key={link.name}
-							icon={link.icon}
-							path={link.path}
-						>
-							{link.name}
-						</NavLink>
-					))}
-				</Flex>
-				<Flex
-					justifyContent={"space-around"}
-					mb={{ base: 14, lg: 4 }}
-					py="5"
-					px={{ base: "4", lg: "4" }}
-					gap={4}
-				>
-					<IconButton
-						onClick={toggleColorMode}
-						aria-label="Theme toggler"
-						icon={colorMode === "dark" ? <FiSun /> : <FiMoon />}
-						_focus={{ outline: "none" }}
-						w={"full"}
-					/>
+	const notificationsModal = useDisclosure();
+	const quickSettingsModal = useDisclosure();
+	const newExpenseModal = useDisclosure();
 
-					<IconButton
-						aria-label="notification-btn"
-						icon={<FiBell />}
-						w={"full"}
-					/>
-					<Menu closeOnSelect={true}>
-						<MenuButton
-							w={"full"}
-							_focus={{ outline: "none" }}
-							as={IconButton}
+	return (
+		<>
+			<Box
+				bg={useColorModeValue("white", "gray.900")}
+				borderRight="1px"
+				borderRightColor={useColorModeValue("gray.200", "gray.700")}
+				w={{ base: "full", lg: 60 }}
+				pos="fixed"
+				h={"full"}
+				{...rest}
+			>
+				<Flex flexDirection={"column"} h="full">
+					<Flex
+						py="5"
+						alignItems="center"
+						mx="8"
+						justifyContent="space-between"
+					>
+						<Text fontSize="2xl" fontWeight="bold">
+							Budgeter
+						</Text>
+						<CloseButton
+							display={{ base: "flex", lg: "none" }}
+							onClick={onClose}
+						/>
+					</Flex>
+					<Flex flexDirection={"column"} flex="1">
+						<Flex
+							style={{
+								textDecoration: "none",
+							}}
+							color={useColorModeValue("white", "white")}
+							bg={useColorModeValue("green.500", "green.700")}
+							_focus={{ boxShadow: "none" }}
+							align="center"
+							p="4"
+							mx="4"
+							mb="2"
+							borderRadius="lg"
+							role="group"
+							cursor="pointer"
+							_hover={{
+								bg: useColorModeValue("gray.900", "white"),
+								color: "white",
+								bgGradient:
+									"linear(to-r, green.500, green.700)",
+							}}
+							shadow="base"
+							onClick={() => newExpenseModal.onOpen()}
 						>
-							<FiTool style={{ margin: "auto" }} />
-						</MenuButton>
-						<MenuList minWidth="240px" p="1" mb={3.5}>
-							<MenuOptionGroup
-								defaultValue="all-time"
-								title="Select data time"
-								type="radio"
+							<Icon
+								mr="4"
+								fontSize="16"
+								_groupHover={{
+									color: "white",
+								}}
+								as={FiPlus}
+							/>
+							Add Expense
+						</Flex>
+						{LinkItems.map((link) => (
+							<NavLink
+								key={link.name}
+								icon={link.icon}
+								path={link.path}
 							>
-								<MenuItemOption
-									value="all-time"
-									_focus={{ outline: "none" }}
-								>
-									All Time
-								</MenuItemOption>
-								<MenuItemOption
-									value="curr-month"
-									_focus={{ outline: "none" }}
-								>
-									Current Month
-								</MenuItemOption>
-							</MenuOptionGroup>
-						</MenuList>
-					</Menu>
-					<IconButton
-						w={"full"}
-						aria-label="log-out-btn"
-						icon={<FiLogOut />}
-						colorScheme="red"
-					/>
+								{link.name}
+							</NavLink>
+						))}
+					</Flex>
+					<Flex
+						justifyContent={"space-around"}
+						mb={{ base: 14, lg: 4 }}
+						py="5"
+						px={{ base: "4", lg: "4" }}
+						gap={4}
+					>
+						<IconButton
+							onClick={toggleColorMode}
+							aria-label="Theme toggler"
+							icon={colorMode === "dark" ? <FiSun /> : <FiMoon />}
+							_focus={{ outline: "none" }}
+							w={"full"}
+						/>
+
+						<IconButton
+							aria-label="notification-btn"
+							icon={<FiBell />}
+							w={"full"}
+							onClick={() => notificationsModal.onOpen()}
+						/>
+						<IconButton
+							aria-label="notification-btn"
+							icon={<FiTool />}
+							w={"full"}
+							onClick={() => quickSettingsModal.onOpen()}
+						/>
+						<IconButton
+							w={"full"}
+							aria-label="log-out-btn"
+							icon={<FiLogOut />}
+							colorScheme="red"
+						/>
+					</Flex>
 				</Flex>
-			</Flex>
-		</Box>
+			</Box>
+			<NotificationsModal
+				onClose={notificationsModal.onClose}
+				isOpen={notificationsModal.isOpen}
+			/>
+			<QuickSettingsModal
+				onClose={quickSettingsModal.onClose}
+				isOpen={quickSettingsModal.isOpen}
+			/>
+			<NewExpenseModal
+				onClose={newExpenseModal.onClose}
+				isOpen={newExpenseModal.isOpen}
+			/>
+		</>
 	);
 };
 
