@@ -1,6 +1,7 @@
 import React from "react";
+import { useQuery } from "react-query";
 import { faker } from "@faker-js/faker";
-import axios from "axios";
+import { FiUser, FiUsers } from "react-icons/fi";
 import {
 	Table,
 	Thead,
@@ -12,54 +13,71 @@ import {
 	TableContainer,
 	Text,
 	Skeleton,
-	useColorModeValue,
 	useDisclosure,
 	Box,
 	Tag,
 	TagLeftIcon,
 	TagLabel,
+	useColorMode,
 } from "@chakra-ui/react";
-import { FiUser, FiUsers } from "react-icons/fi";
-import { useQuery } from "react-query";
-import { useAtom } from "jotai";
+import shallow from "zustand/shallow";
 
 import { ExpenseEditModal } from "./ExpenseEditModal";
-import { expenseAmountAtom } from "../atoms/Home";
-import { parseDate } from "../utils";
+
+import { useExpenseStore } from "../stores";
 import { IExpense, ISharedExpense } from "../types";
+import {
+	axiosRequest,
+	handleColorModeValue,
+	handleDefault,
+	parseDate,
+} from "../utils";
 
 export const ExpenseTable = () => {
+	const { colorMode } = useColorMode();
+
 	const { isOpen, onOpen, onClose } = useDisclosure();
 
-	const [loaded, setLoaded] = React.useState<boolean>(false);
-	const [expenses, setExpenses] = React.useState<IExpense[]>();
 	const [modalData, setModalData] = React.useState<IExpense>();
-	const [expenseAmount, setExpenseAmount] = useAtom(expenseAmountAtom);
+	const [sumExpensesAmount, updateSumExpensesAmount] = useExpenseStore(
+		(state) => [state.sumExpensesAmount, state.updateSumExpensesAmount],
+		shallow
+	);
 
-	const { isLoading, error, data, isFetching } = useQuery(["data"], () => {
-		const data = axios
-			.get("https://jsonplaceholder.typicode.com/todos/1")
-			.then((res) => res.data);
-		return data;
-	});
+	const { isLoading, error, data, isFetching, status } = useQuery(
+		["data"],
+		() => axiosRequest.get("/expenses/").then((res) => res.data),
+		{
+			refetchOnWindowFocus: false,
+		}
+	);
 
-	React.useMemo(
-		() =>
-			setExpenseAmount(
+	const calcExpensesSum = React.useCallback(
+		(expenses: IExpense[]) =>
+			handleDefault<number>(
 				parseFloat(
-					expenses!
-						?.reduce((prev, curr) => prev + curr.amount, 0)
+					expenses
+						?.reduce(
+							(prev: any, curr: any) =>
+								prev + parseFloat(curr.amount),
+							0
+						)
 						.toFixed(2)
-				)
+				),
+				0
 			),
-		[expenses]
+		[data]
 	);
 
 	React.useEffect(() => {
-		setExpenses(createData(10));
-		setLoaded(true);
+		// setExpenses(createData(10));
+		// setLoaded(true);
+		if (!isLoading) {
+			const expensesSum = calcExpensesSum(data);
+			updateSumExpensesAmount(expensesSum);
+		}
 		return;
-	}, []);
+	}, [isLoading]);
 
 	function createData(count: number): IExpense[] {
 		let items: IExpense[] = [];
@@ -67,13 +85,13 @@ export const ExpenseTable = () => {
 		for (let i = 0; i < count; i++) {
 			let expense: IExpense = {
 				id: faker.database.mongodbObjectId(),
-				userId: faker.datatype.number().toString(),
+				user_id: faker.datatype.number().toString(),
 				description: faker.finance.transactionDescription(),
-				dateTime: faker.date.past().toUTCString(),
-				lastUpdateTime: faker.date.recent().toUTCString(),
+				date_time: faker.date.past().toUTCString(),
+				last_update: faker.date.recent().toUTCString(),
 				amount: parseFloat(faker.finance.amount()),
-				isShared: faker.datatype.boolean(),
-				sharedExpenses: [],
+				is_shared: faker.datatype.boolean(),
+				shared_expenses: [],
 			};
 
 			let sharedExpenses: ISharedExpense[] = [];
@@ -81,16 +99,15 @@ export const ExpenseTable = () => {
 			for (let j = 0; j < parseInt(faker.random.numeric()); j++) {
 				sharedExpenses.push({
 					id: faker.database.mongodbObjectId(),
-					expenseId: expense.id,
-					lastUpdateTime: faker.date.recent().toUTCString(),
-					mainUserId: expense.userId,
-					sharedUserId: faker.name.fullName(),
-					sharedUserAmount: parseFloat(faker.finance.amount()),
-					status:
-						faker.datatype.boolean() === true ? "paid" : "unpaid",
+					expense_id: expense.id,
+					last_update: faker.date.recent().toUTCString(),
+					main_user_id: expense.user_id,
+					shared_user_id: faker.name.fullName(),
+					shared_user_amount: parseFloat(faker.finance.amount()),
+					status: faker.datatype.boolean() === true ? "P" : "UP",
 				});
 			}
-			expense.sharedExpenses = sharedExpenses;
+			expense.shared_expenses = sharedExpenses;
 			items.push(expense);
 		}
 		return items;
@@ -108,44 +125,56 @@ export const ExpenseTable = () => {
 					<Thead
 						pos={"sticky"}
 						top={0}
-						bgColor={useColorModeValue("white", "gray.900")}
+						bgColor={handleColorModeValue(
+							"white",
+							"gray.900",
+							colorMode
+						)}
 					>
-						<Tr>
-							<Th>Date</Th>
-							<Th>Description</Th>
-							<Th>Type</Th>
-							<Th isNumeric>Amount</Th>
-						</Tr>
+						{data!?.length > 0 ? (
+							<Tr>
+								<Th>Date</Th>
+								<Th>Description</Th>
+								<Th>Type</Th>
+								<Th isNumeric>Amount</Th>
+							</Tr>
+						) : (
+							<Tr></Tr>
+						)}
 					</Thead>
 					{!isLoading ? (
-						expenses != undefined && expenses.length > 0 ? (
+						data!?.length > 0 ? (
 							<Tbody>
-								{expenses?.map((expense, idx) => (
+								{data?.map((expense: any, idx: number) => (
 									<Tr
 										key={idx}
 										_hover={{
-											bgColor: useColorModeValue(
+											bgColor: handleColorModeValue(
 												"gray.100",
-												"gray.900"
+												"gray.900",
+												colorMode
 											),
 											cursor: "pointer",
 										}}
-										bgColor={useColorModeValue(
+										bgColor={handleColorModeValue(
 											"white",
-											"gray.800"
+											"gray.800",
+											colorMode
 										)}
 										onClick={() => handleModalData(expense)}
 									>
 										<Td>
 											<Skeleton
-												isLoaded={loaded}
-												startColor={useColorModeValue(
+												isLoaded={!isFetching}
+												startColor={handleColorModeValue(
 													"gray.100",
-													"gray.400"
-												)}
-												endColor={useColorModeValue(
 													"gray.400",
-													"gray.700"
+													colorMode
+												)}
+												endColor={handleColorModeValue(
+													"gray.400",
+													"gray.700",
+													colorMode
 												)}
 											>
 												<Box
@@ -160,21 +189,22 @@ export const ExpenseTable = () => {
 													<Text fontSize={"sm"}>
 														{
 															parseDate(
-																expense.dateTime
+																expense.date_time
 															).date
 														}
 													</Text>
 													<Text
 														fontSize={"xs"}
-														color={useColorModeValue(
+														color={handleColorModeValue(
 															"gray.500",
-															"gray.400"
+															"gray.400",
+															colorMode
 														)}
 														mt={0.5}
 													>
 														{
 															parseDate(
-																expense.dateTime
+																expense.date_time
 															).time
 														}
 													</Text>
@@ -186,14 +216,16 @@ export const ExpenseTable = () => {
 											w="sm"
 										>
 											<Skeleton
-												isLoaded={loaded}
-												startColor={useColorModeValue(
+												isLoaded={!isFetching}
+												startColor={handleColorModeValue(
 													"gray.100",
-													"gray.400"
-												)}
-												endColor={useColorModeValue(
 													"gray.400",
-													"gray.700"
+													colorMode
+												)}
+												endColor={handleColorModeValue(
+													"gray.400",
+													"gray.700",
+													colorMode
 												)}
 											>
 												<Text
@@ -209,14 +241,16 @@ export const ExpenseTable = () => {
 										</Td>
 										<Td>
 											<Skeleton
-												isLoaded={loaded}
-												startColor={useColorModeValue(
+												isLoaded={!isFetching}
+												startColor={handleColorModeValue(
 													"gray.100",
-													"gray.400"
-												)}
-												endColor={useColorModeValue(
 													"gray.400",
-													"gray.700"
+													colorMode
+												)}
+												endColor={handleColorModeValue(
+													"gray.400",
+													"gray.700",
+													colorMode
 												)}
 											>
 												<Tag
@@ -226,7 +260,7 @@ export const ExpenseTable = () => {
 													rounded={"full"}
 												>
 													<TagLeftIcon boxSize="12px">
-														{expense?.isShared ? (
+														{expense?.is_shared ? (
 															<FiUsers
 																size={"24px"}
 															/>
@@ -237,7 +271,7 @@ export const ExpenseTable = () => {
 														)}
 													</TagLeftIcon>
 													<TagLabel>
-														{expense?.isShared
+														{expense?.is_shared
 															? "Shared"
 															: "Self"}
 													</TagLabel>
@@ -246,14 +280,16 @@ export const ExpenseTable = () => {
 										</Td>
 										<Td isNumeric>
 											<Skeleton
-												isLoaded={loaded}
-												startColor={useColorModeValue(
+												isLoaded={!isFetching}
+												startColor={handleColorModeValue(
 													"gray.100",
-													"gray.400"
-												)}
-												endColor={useColorModeValue(
 													"gray.400",
-													"gray.700"
+													colorMode
+												)}
+												endColor={handleColorModeValue(
+													"gray.400",
+													"gray.700",
+													colorMode
 												)}
 											>
 												<Text
@@ -268,7 +304,17 @@ export const ExpenseTable = () => {
 								))}
 							</Tbody>
 						) : (
-							<Tbody>Nothing found</Tbody>
+							<Tbody
+								fontWeight={"medium"}
+								color={handleColorModeValue(
+									"red.500",
+									"red.600",
+									colorMode
+								)}
+								verticalAlign="center"
+							>
+								<Td textAlign={"center"}>No Expenses Found!</Td>
+							</Tbody>
 						)
 					) : (
 						<Tbody>
@@ -276,69 +322,79 @@ export const ExpenseTable = () => {
 								<Tr
 									key={idx}
 									_hover={{
-										bgColor: useColorModeValue(
+										bgColor: handleColorModeValue(
 											"gray.100",
-											"gray.900"
+											"gray.900",
+											colorMode
 										),
 										cursor: "pointer",
 									}}
-									bgColor={useColorModeValue(
+									bgColor={handleColorModeValue(
 										"white",
-										"gray.800"
+										"gray.800",
+										colorMode
 									)}
 								>
 									<Td>
 										<Skeleton
-											isLoaded={loaded}
-											startColor={useColorModeValue(
+											isLoaded={isFetching}
+											startColor={handleColorModeValue(
 												"gray.100",
-												"gray.400"
-											)}
-											endColor={useColorModeValue(
 												"gray.400",
-												"gray.700"
+												colorMode
+											)}
+											endColor={handleColorModeValue(
+												"gray.400",
+												"gray.700",
+												colorMode
 											)}
 											h="6"
 										></Skeleton>
 									</Td>
 									<Td>
 										<Skeleton
-											isLoaded={loaded}
-											startColor={useColorModeValue(
+											isLoaded={isFetching}
+											startColor={handleColorModeValue(
 												"gray.100",
-												"gray.400"
-											)}
-											endColor={useColorModeValue(
 												"gray.400",
-												"gray.700"
+												colorMode
+											)}
+											endColor={handleColorModeValue(
+												"gray.400",
+												"gray.700",
+												colorMode
 											)}
 											h="6"
 										></Skeleton>
 									</Td>
 									<Td>
 										<Skeleton
-											isLoaded={loaded}
-											startColor={useColorModeValue(
+											isLoaded={isFetching}
+											startColor={handleColorModeValue(
 												"gray.100",
-												"gray.400"
-											)}
-											endColor={useColorModeValue(
 												"gray.400",
-												"gray.700"
+												colorMode
+											)}
+											endColor={handleColorModeValue(
+												"gray.400",
+												"gray.700",
+												colorMode
 											)}
 											h="6"
 										></Skeleton>
 									</Td>
 									<Td>
 										<Skeleton
-											isLoaded={loaded}
-											startColor={useColorModeValue(
+											isLoaded={isFetching}
+											startColor={handleColorModeValue(
 												"gray.100",
-												"gray.400"
-											)}
-											endColor={useColorModeValue(
 												"gray.400",
-												"gray.700"
+												colorMode
+											)}
+											endColor={handleColorModeValue(
+												"gray.400",
+												"gray.700",
+												colorMode
 											)}
 											h="6"
 										></Skeleton>
@@ -350,14 +406,22 @@ export const ExpenseTable = () => {
 					<Tfoot
 						pos={"sticky"}
 						bottom={0}
-						bgColor={useColorModeValue("white", "gray.900")}
+						bgColor={handleColorModeValue(
+							"white",
+							"gray.900",
+							colorMode
+						)}
 					>
-						<Tr>
-							<Th>ITEMS</Th>
-							<Th>{expenses?.length}</Th>
-							<Th>TOTAL</Th>
-							<Th isNumeric>₹{expenseAmount}</Th>
-						</Tr>
+						{data!?.length > 0 ? (
+							<Tr>
+								<Th>ITEMS</Th>
+								<Th>{data?.length}</Th>
+								<Th>TOTAL</Th>
+								<Th isNumeric>₹{sumExpensesAmount}</Th>
+							</Tr>
+						) : (
+							<></>
+						)}
 					</Tfoot>
 				</Table>
 			</TableContainer>

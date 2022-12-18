@@ -7,3 +7,4 @@ export * from "./SettleModal";
 export * from "./NotificationsModal";
 export * from "./QuickSettingsModal";
 export * from "./NewExpenseModal";
+export * from "./ProtectedRoute";

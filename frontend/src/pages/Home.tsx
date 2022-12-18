@@ -1,4 +1,5 @@
 import { Container, Grid, GridItem, useColorModeValue } from "@chakra-ui/react";
+import { useCookies } from "react-cookie";
 import { ExpenseTable, TopCards, Navbar } from "../components";
 import { ExpenseList } from "../components/ExpenseList";
 
@@ -31,7 +32,6 @@ export const Home = () => {
 						border={"1px"}
 						rounded={"lg"}
 						maxH={"full"}
-						// overflowY={"auto"}
 						overflowY={"hidden"}
 						borderColor={useColorModeValue("gray.300", "gray.700")}
 						bgColor={useColorModeValue("white", "gray.900")}

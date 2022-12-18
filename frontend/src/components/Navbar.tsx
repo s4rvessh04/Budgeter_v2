@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Link as WouterLink, useRoute } from "wouter";
+import { Link as WouterLink, useLocation, useRoute } from "wouter";
 import {
 	IconButton,
 	Box,
@@ -14,6 +14,7 @@ import {
 	BoxProps,
 	FlexProps,
 	useColorMode,
+	useToast,
 } from "@chakra-ui/react";
 import {
 	FiHome,
@@ -34,6 +35,8 @@ import {
 	QuickSettingsModal,
 	NewExpenseModal,
 } from "../components";
+import { useMutation } from "react-query";
+import { axiosLogout } from "../utils";
 
 interface LinkItemProps {
 	name: string;
@@ -51,6 +54,43 @@ const LinkItems: Array<LinkItemProps> = [
 
 export function Navbar({ children }: { children: ReactNode }) {
 	const { isOpen, onOpen, onClose } = useDisclosure();
+	const toast = useToast();
+	const [, setLocation] = useLocation();
+
+	const mutation = useMutation({
+		mutationFn: () => axiosLogout.post("/logout/"),
+		onSuccess() {
+			setLocation("/home");
+		},
+		onError(err) {
+			if (err instanceof Error) {
+				toast({
+					title: "Error Occured!",
+					description: err.message,
+					status: "error",
+					duration: 9000,
+					isClosable: true,
+				});
+			}
+		},
+	});
+
+	async function handleLogut() {
+		// const res = await axiosLogout.post("/logout/");
+		// console.log(res);
+		// if (res.statusText == "OK") {
+		// 	setLocation("/home");
+		// } else {
+		// 	toast({
+		// 		title: "Error Occured!",
+		// 		description: String("Error"),
+		// 		status: "error",
+		// 		duration: 9000,
+		// 		isClosable: true,
+		// 	});
+		// }
+		mutation.mutate();
+	}
 
 	return (
 		<Box
@@ -63,6 +103,7 @@ export function Navbar({ children }: { children: ReactNode }) {
 		>
 			<SidebarContent
 				onClose={() => onClose}
+				handleLogout={handleLogut}
 				display={{ base: "none", lg: "block" }}
 			/>
 			<Drawer
@@ -75,7 +116,10 @@ export function Navbar({ children }: { children: ReactNode }) {
 				size="full"
 			>
 				<DrawerContent>
-					<SidebarContent onClose={onClose} />
+					<SidebarContent
+						onClose={onClose}
+						handleLogout={handleLogut}
+					/>
 				</DrawerContent>
 			</Drawer>
 			{/* mobilenav */}
@@ -136,9 +180,10 @@ const NavLink = ({ icon, path, children, ...rest }: NavItemProps) => {
 
 interface SidebarProps extends BoxProps {
 	onClose: () => void;
+	handleLogout: () => void;
 }
 
-const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
+const SidebarContent = ({ onClose, handleLogout, ...rest }: SidebarProps) => {
 	const { colorMode, toggleColorMode } = useColorMode();
 
 	const notificationsModal = useDisclosure();
@@ -247,6 +292,7 @@ const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
 							aria-label="log-out-btn"
 							icon={<FiLogOut />}
 							colorScheme="red"
+							onClick={handleLogout}
 						/>
 					</Flex>
 				</Flex>

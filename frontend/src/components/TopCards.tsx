@@ -8,17 +8,10 @@ import {
 	useColorModeValue,
 } from "@chakra-ui/react";
 import { faker } from "@faker-js/faker";
-import { useAtom } from "jotai";
-import { expenseAmountAtom } from "../atoms";
+import { useExpenseStore } from "../stores";
 
-type CardData<T> = {
-	title: T;
-	amount: T;
-	perChange: T;
-};
-
-export const TopCards = (data?: CardData<string>[]) => {
-	const [expenseAmount] = useAtom(expenseAmountAtom);
+export const TopCards = () => {
+	const expenseAmount = useExpenseStore((state) => state.sumExpensesAmount);
 
 	return (
 		<StatGroup columnGap={5} mb={5} display={{ base: "block", md: "flex" }}>

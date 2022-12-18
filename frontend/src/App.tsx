@@ -1,22 +1,41 @@
-import { QueryClient, QueryClientProvider } from "react-query";
-import { ReactQueryDevtools } from "react-query/devtools";
 import { Route, Switch } from "wouter";
-import { Home, Error, Friends, NewExpense, Expenses } from "./pages";
+import { ProtectedRoute } from "./components";
 
-const queryClient = new QueryClient();
+import {
+	Home,
+	Error,
+	Friends,
+	NewExpense,
+	Expenses,
+	Login,
+	Landing,
+} from "./pages";
 
 function App() {
 	return (
-		<QueryClientProvider client={queryClient}>
-			<Switch>
-				<Route path="/" component={Home} />
-				<Route path="/friends" component={Friends} />
-				<Route path="/new" component={NewExpense} />
-				<Route path="/expenses" component={Expenses} />
-				<Route component={Error} />
-			</Switch>
-			<ReactQueryDevtools initialIsOpen={false} />
-		</QueryClientProvider>
+		<Switch>
+			<Route path="/">
+				{/* {isAuthenticated ? <Redirect to="/home" /> : <Landing />} */}
+				<Landing />
+			</Route>
+			<Route path="/login">
+				{/* {isAuthenticated ? <Redirect to="/home" /> : <Login />} */}
+				<Login />
+			</Route>
+			<ProtectedRoute path="/home">
+				<Home />
+			</ProtectedRoute>
+			<ProtectedRoute path="/new">
+				<NewExpense />
+			</ProtectedRoute>
+			<ProtectedRoute path="/expenses">
+				<Expenses />
+			</ProtectedRoute>
+			<ProtectedRoute path="/friends">
+				<Friends />
+			</ProtectedRoute>
+			<Route component={Error} />
+		</Switch>
 	);
 }
 

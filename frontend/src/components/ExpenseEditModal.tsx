@@ -45,14 +45,15 @@ interface Props {
 
 export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 	const toast = useToast();
-	const dateTime = parseDate(data!?.dateTime);
+	const dateTime = parseDate(data!?.date_time);
 
 	const [sharedExpenses, setSharedExpenses] = React.useState<
 		ISharedExpense[]
-	>(data!?.sharedExpenses);
+	>(data!?.shared_expenses);
 
 	React.useEffect(() => {
-		setSharedExpenses(data!?.sharedExpenses);
+		setSharedExpenses(data!?.shared_expenses);
+		console.log(data);
 		return;
 	}, [data]);
 
@@ -62,12 +63,12 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 				...sharedExpenses,
 				{
 					id: "0",
-					expenseId: "0",
-					lastUpdateTime: "0",
-					mainUserId: "0",
-					sharedUserAmount: 0,
-					sharedUserId: "0",
-					status: "unpaid",
+					expense_id: "0",
+					last_update: "0",
+					main_user_id: "0",
+					shared_user_amount: 0,
+					shared_user_id: "0",
+					status: "UP",
 				},
 			]);
 		} else {
@@ -85,7 +86,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 					<ModalCloseButton _focus={{ outline: "none" }} />
 					<ModalBody pb={6}>
 						<Flex justify={"space-between"} alignItems={"center"}>
-							<Text
+							<Box
 								fontWeight={"semibold"}
 								sx={{
 									fontVariantNumeric: "proportional-nums",
@@ -103,7 +104,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 								>
 									{dateTime.time}
 								</Text>
-							</Text>
+							</Box>
 							<Box>
 								<Tag
 									size={"md"}
@@ -112,14 +113,14 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 									colorScheme="telegram"
 								>
 									<TagLeftIcon boxSize="12px">
-										{data?.isShared ? (
+										{data?.is_shared ? (
 											<FiUsers size={"24px"} />
 										) : (
 											<FiUser size={"24px"} />
 										)}
 									</TagLeftIcon>
 									<TagLabel>
-										{data?.isShared ? "Shared" : "Self"}
+										{data?.is_shared ? "Shared" : "Self"}
 									</TagLabel>
 								</Tag>
 							</Box>
@@ -142,7 +143,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 								</NumberInputStepper>
 							</NumberInput>
 						</FormControl>
-						{data?.isShared && sharedExpenses?.length !== 0 ? (
+						{data?.is_shared && sharedExpenses?.length !== 0 ? (
 							<FormControl isRequired mt={4}>
 								<FormLabel>With</FormLabel>
 								{sharedExpenses?.map((sharedExpense, idx) => (
@@ -160,11 +161,13 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 										>
 											<Select
 												defaultValue={
-													sharedExpense.sharedUserId
+													sharedExpense.shared_user_id
 												}
 											>
 												<option>
-													{sharedExpense.sharedUserId}
+													{
+														sharedExpense.shared_user_id
+													}
 												</option>
 											</Select>
 										</GridItem>
@@ -177,7 +180,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 											<NumberInput
 												step={100}
 												defaultValue={
-													sharedExpense.sharedUserAmount
+													sharedExpense.shared_user_amount
 												}
 												min={0}
 											>
@@ -205,7 +208,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 													_hover={{
 														bg:
 															sharedExpense?.status ===
-															"paid"
+															"P"
 																? useColorModeValue(
 																		"green.600",
 																		"green.300"
@@ -218,7 +221,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 													_active={{
 														bg:
 															sharedExpense?.status ===
-															"paid"
+															"UP"
 																? useColorModeValue(
 																		"green.600",
 																		"green.300"
@@ -230,7 +233,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 													}}
 													bg={
 														sharedExpense?.status ===
-														"paid"
+														"P"
 															? useColorModeValue(
 																	"green.500",
 																	"green.200"
@@ -258,7 +261,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 													>
 														Mark{" "}
 														{sharedExpense?.status ===
-														"paid"
+														"P"
 															? "Unpaid"
 															: "Paid"}
 													</MenuItem>

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import React from "react";
 import {
 	Box,
+	color,
 	Flex,
 	Grid,
 	GridItem,
@@ -9,29 +10,45 @@ import {
 	TabPanel,
 	TabPanels,
 	Tabs,
-	useColorModeValue,
+	useColorMode,
 	useDisclosure,
 } from "@chakra-ui/react";
-import { OweModal, SettleModal } from "../components";
+import axios from "axios";
+import shallow from "zustand/shallow";
 import { faker } from "@faker-js/faker";
 import { useQuery } from "react-query";
-import { useAtom } from "jotai";
-import axios from "axios";
-import { settleExpensesAmountAtom, oweExpensesAmountAtom } from "../atoms";
-import { parseAmount } from "../utils";
+
+import { OweModal, SettleModal } from "../components";
 import { IExpenseList } from "../types/modals.component.types";
 
+import { handleColorModeValue, parseAmount } from "../utils";
+import { useOweExpenseStore, useSettleExpenseStore } from "../stores";
+
 export const ExpenseList = () => {
+	const { colorMode } = useColorMode();
+
 	const oweExpensesModalDisclosure = useDisclosure();
 	const settleExpensesModalDisclosure = useDisclosure();
 
-	const [oweExpenses, setOweExpenses] = useState<IExpenseList[]>();
-	const [settleExpenses, setSettleExpenses] = useState<IExpenseList[]>();
-	const [oweExpensesSum, setOweExpensesSum] = useAtom(oweExpensesAmountAtom);
-	const [settleExpensesSum, setSettleExpensesSum] = useAtom(
-		settleExpensesAmountAtom
+	const [modalData, setModalData] = React.useState<IExpenseList>();
+	const [oweExpenses, setOweExpenses] = React.useState<IExpenseList[]>();
+	const [sumOweExpenseAmount, updateSumOweExpenseAmount] = useOweExpenseStore(
+		(state) => [
+			state.sumOweExpensesAmount,
+			state.updateSumOweExpensesAmount,
+		],
+		shallow
 	);
-	const [modalData, setModalData] = useState<IExpenseList>();
+	const [settleExpenses, setSettleExpenses] =
+		React.useState<IExpenseList[]>();
+	const [sumSettleExpensesAmount, updateSumSettleExpensesAmount] =
+		useSettleExpenseStore(
+			(state) => [
+				state.sumSettleExpensesAmount,
+				state.updateSumSettleExpensesAmount,
+			],
+			shallow
+		);
 
 	const { isLoading, error, data, isFetching } = useQuery(["owe-due"], () => {
 		const data = axios
@@ -40,77 +57,60 @@ export const ExpenseList = () => {
 		return data;
 	});
 
-	useMemo(() => {
-		let oweSum = 0;
+	const expensesSum = React.useCallback(
+		(expenses: IExpenseList[]) => {
+			let sum = 0;
 
-		oweExpenses?.forEach((item) => {
-			let expensesSum: number = parseFloat(
-				item.expenses
-					.reduce((prev, curr) => prev + curr.amount, 0)
-					.toFixed(2)
-			);
+			expenses.forEach((item) => {
+				let expensesSum: number = parseFloat(
+					item.expenses
+						.reduce((prev, curr) => prev + curr.amount, 0)
+						.toFixed(2)
+				);
 
-			item.totalAmount = expensesSum;
-			oweSum += expensesSum;
-		});
+				item.totalAmount = expensesSum;
+				sum += expensesSum;
+			});
 
-		setOweExpensesSum(parseFloat(oweSum.toFixed(2)));
-	}, [oweExpenses]);
+			return parseFloat(sum.toFixed(2));
+		},
+		[oweExpenses, settleExpenses]
+	);
 
-	useMemo(() => {
-		let settleSum = 0;
+	const createOweExpenses = React.useCallback(
+		(count: number): IExpenseList[] => {
+			let items: IExpenseList[] = [];
 
-		settleExpenses?.forEach((item) => {
-			let expensesSum: number = parseFloat(
-				item.expenses
-					.reduce((prev, curr) => prev + curr.amount, 0)
-					.toFixed(2)
-			);
+			for (let i = 0; i < count; i++) {
+				let expenses = [];
 
-			item.totalAmount = expensesSum;
-			settleSum += expensesSum;
-		});
+				for (let j = 0; j < parseInt(faker.random.numeric(1)); j++) {
+					let id = faker.database.mongodbObjectId();
+					let dateTime = faker.date.past().toUTCString();
+					let description = faker.finance.transactionDescription();
+					let amount = parseFloat(faker.finance.amount());
 
-		setSettleExpensesSum(parseFloat(settleSum.toFixed(2)));
-	}, [settleExpenses]);
+					expenses.push({
+						id: id,
+						dateTime: dateTime,
+						description: description,
+						amount: amount,
+					});
+				}
 
-	useEffect(() => {
-		setSettleExpenses(createSettleExpenses(10));
-		setOweExpenses(createOweExpenses(10));
-		return;
-	}, []);
-
-	const createOweExpenses = (count: number): IExpenseList[] => {
-		let items: IExpenseList[] = [];
-
-		for (let i = 0; i < count; i++) {
-			let expenses = [];
-
-			for (let j = 0; j < parseInt(faker.random.numeric(1)); j++) {
-				let id = faker.database.mongodbObjectId();
-				let dateTime = faker.date.past().toUTCString();
-				let description = faker.finance.transactionDescription();
-				let amount = parseFloat(faker.finance.amount());
-
-				expenses.push({
-					id: id,
-					dateTime: dateTime,
-					description: description,
-					amount: amount,
+				items.push({
+					id: faker.database.mongodbObjectId(),
+					name: faker.name.fullName(),
+					totalAmount: parseFloat(faker.finance.amount()),
+					expenses: expenses,
 				});
 			}
+			return items;
+		},
+		[]
+	);
 
-			items.push({
-				id: faker.database.mongodbObjectId(),
-				name: faker.name.fullName(),
-				totalAmount: parseFloat(faker.finance.amount()),
-				expenses: expenses,
-			});
-		}
-		return items;
-	};
-
-	const createSettleExpenses = (count: number) => {
+	const createSettleExpenses = React.useCallback((count: number) => {
 		let items: IExpenseList[] = [];
 
 		for (let i = 0; i < count; i++) {
@@ -133,7 +133,17 @@ export const ExpenseList = () => {
 			});
 		}
 		return items;
-	};
+	}, []);
+
+	React.useEffect(() => {
+		const settleExpenses = createSettleExpenses(10);
+		const oweExpenses = createOweExpenses(10);
+		setSettleExpenses(settleExpenses);
+		setOweExpenses(oweExpenses);
+		updateSumOweExpenseAmount(expensesSum(oweExpenses));
+		updateSumSettleExpensesAmount(expensesSum(settleExpenses));
+		return;
+	}, []);
 
 	function handleOweModal(data: any) {
 		setModalData(data);
@@ -152,7 +162,11 @@ export const ExpenseList = () => {
 					<TabList
 						justifyContent={"space-between"}
 						gap={2}
-						bg={useColorModeValue("gray.100", "gray.800")}
+						bg={handleColorModeValue(
+							"gray.100",
+							"gray.800",
+							colorMode
+						)}
 						p={1}
 						rounded={"lg"}
 						h="min-content"
@@ -160,7 +174,11 @@ export const ExpenseList = () => {
 						<Tab
 							w={"50%"}
 							_selected={{
-								bg: useColorModeValue("white", "gray.700"),
+								bg: handleColorModeValue(
+									"white",
+									"gray.700",
+									colorMode
+								),
 							}}
 							_focus={{ outline: "none" }}
 						>
@@ -169,7 +187,11 @@ export const ExpenseList = () => {
 						<Tab
 							w={"50%"}
 							_selected={{
-								bg: useColorModeValue("white", "gray.700"),
+								bg: handleColorModeValue(
+									"white",
+									"gray.700",
+									colorMode
+								),
 							}}
 							_focus={{ outline: "none" }}
 						>
@@ -188,16 +210,18 @@ export const ExpenseList = () => {
 									px={4}
 									py={4}
 									borderBottom={"1px"}
-									borderColor={useColorModeValue(
+									borderColor={handleColorModeValue(
 										"gray.100",
-										"gray.700"
+										"gray.700",
+										colorMode
 									)}
 									w="full"
 									onClick={() => handleSettleModal(item)}
 									_hover={{
-										bgColor: useColorModeValue(
+										bgColor: handleColorModeValue(
 											"gray.100",
-											"gray.800"
+											"gray.800",
+											colorMode
 										),
 										cursor: "pointer",
 									}}
@@ -230,13 +254,18 @@ export const ExpenseList = () => {
 								w="full"
 								pos="sticky"
 								bottom="0"
-								bgColor={useColorModeValue("white", "gray.900")}
+								bgColor={handleColorModeValue(
+									"white",
+									"gray.900",
+									colorMode
+								)}
 								fontSize={"xs"}
 								textTransform={"uppercase"}
 								fontWeight="bold"
-								color={useColorModeValue(
+								color={handleColorModeValue(
 									"gray.700",
-									"gray.400"
+									"gray.400",
+									colorMode
 								)}
 							>
 								<GridItem
@@ -253,7 +282,7 @@ export const ExpenseList = () => {
 									alignItems={"center"}
 									justifyContent={"end"}
 								>
-									₹{settleExpensesSum}
+									₹{sumSettleExpensesAmount}
 								</GridItem>
 							</Grid>
 						</Box>
@@ -268,16 +297,18 @@ export const ExpenseList = () => {
 									px={4}
 									py={4}
 									borderBottom={"1px"}
-									borderColor={useColorModeValue(
+									borderColor={handleColorModeValue(
 										"gray.100",
-										"gray.700"
+										"gray.700",
+										colorMode
 									)}
 									w="full"
 									onClick={() => handleOweModal(expense)}
 									_hover={{
-										bgColor: useColorModeValue(
+										bgColor: handleColorModeValue(
 											"gray.100",
-											"gray.800"
+											"gray.800",
+											colorMode
 										),
 										cursor: "pointer",
 									}}
@@ -310,13 +341,18 @@ export const ExpenseList = () => {
 								w="full"
 								pos="sticky"
 								bottom="0"
-								bgColor={useColorModeValue("white", "gray.900")}
+								bgColor={handleColorModeValue(
+									"white",
+									"gray.900",
+									colorMode
+								)}
 								fontSize={"xs"}
 								textTransform={"uppercase"}
 								fontWeight="bold"
-								color={useColorModeValue(
+								color={handleColorModeValue(
 									"gray.700",
-									"gray.400"
+									"gray.400",
+									colorMode
 								)}
 							>
 								<GridItem
@@ -333,7 +369,7 @@ export const ExpenseList = () => {
 									alignItems={"center"}
 									justifyContent={"end"}
 								>
-									₹{oweExpensesSum}
+									₹{sumOweExpenseAmount}
 								</GridItem>
 							</Grid>
 						</Box>

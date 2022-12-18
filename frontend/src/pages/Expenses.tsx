@@ -53,13 +53,13 @@ export const Expenses = () => {
 		for (let i = 0; i < count; i++) {
 			let expense: IExpense = {
 				id: faker.database.mongodbObjectId(),
-				userId: faker.datatype.number().toString(),
+				user_id: faker.datatype.number().toString(),
 				description: faker.finance.transactionDescription(),
-				dateTime: faker.date.past().toUTCString(),
-				lastUpdateTime: faker.date.recent().toUTCString(),
+				date_time: faker.date.past().toUTCString(),
+				last_update: faker.date.recent().toUTCString(),
 				amount: parseFloat(faker.finance.amount()),
-				isShared: faker.datatype.boolean(),
-				sharedExpenses: [],
+				is_shared: faker.datatype.boolean(),
+				shared_expenses: [],
 			};
 
 			let sharedExpenses: ISharedExpense[] = [];
@@ -67,16 +67,15 @@ export const Expenses = () => {
 			for (let j = 0; j < parseInt(faker.random.numeric()); j++) {
 				sharedExpenses.push({
 					id: faker.database.mongodbObjectId(),
-					expenseId: expense.id,
-					lastUpdateTime: faker.date.recent().toUTCString(),
-					mainUserId: expense.userId,
-					sharedUserId: faker.name.fullName(),
-					sharedUserAmount: parseFloat(faker.finance.amount()),
-					status:
-						faker.datatype.boolean() === true ? "paid" : "unpaid",
+					expense_id: expense.id,
+					last_update: faker.date.recent().toUTCString(),
+					main_user_id: expense.user_id,
+					shared_user_id: faker.name.fullName(),
+					shared_user_amount: parseFloat(faker.finance.amount()),
+					status: faker.datatype.boolean() === true ? "P" : "UP",
 				});
 			}
-			expense.sharedExpenses = sharedExpenses;
+			expense.shared_expenses = sharedExpenses;
 			items.push(expense);
 		}
 		return items;
@@ -156,7 +155,7 @@ export const Expenses = () => {
 									}}
 								>
 									<Text fontSize={"sm"}>
-										{parseDate(expense.dateTime).date}
+										{parseDate(expense.date_time).date}
 									</Text>
 									<Text
 										fontSize={"xs"}
@@ -166,7 +165,7 @@ export const Expenses = () => {
 										)}
 										mt={0.5}
 									>
-										{parseDate(expense.dateTime).time}
+										{parseDate(expense.date_time).time}
 									</Text>
 								</Box>
 								<Tag
@@ -176,14 +175,14 @@ export const Expenses = () => {
 									rounded={"full"}
 								>
 									<TagLeftIcon boxSize="12px">
-										{expense?.isShared ? (
+										{expense?.is_shared ? (
 											<FiUsers size={"24px"} />
 										) : (
 											<FiUser size={"24px"} />
 										)}
 									</TagLeftIcon>
 									<TagLabel>
-										{expense?.isShared ? "Shared" : "Self"}
+										{expense?.is_shared ? "Shared" : "Self"}
 									</TagLabel>
 								</Tag>
 							</Flex>
