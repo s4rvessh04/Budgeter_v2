@@ -72,7 +72,7 @@ export const ExpenseTable = () => {
 	React.useEffect(() => {
 		// setExpenses(createData(10));
 		// setLoaded(true);
-		if (!isLoading) {
+		if (!isFetching) {
 			const expensesSum = calcExpensesSum(data);
 			updateSumExpensesAmount(expensesSum);
 		}
