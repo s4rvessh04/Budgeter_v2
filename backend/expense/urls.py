@@ -4,7 +4,7 @@ from . import views
 
 urlpatterns = [
     path("", views.ExpenseListCreateAPIView.as_view()),
-    path("<int:pk>/", views.ExpenseRetrieveAPIView.as_view()),
+    path("<int:pk>/", views.ExpenseListCreateAPIView.as_view()),
     path("<int:pk>/update", views.ExpenseUpdateAPIView.as_view()),
     path("<int:pk>/delete", views.ExpenseDestroyAPIView.as_view()),
     path("shared/", views.SharedExpenseListCreateAPIView.as_view()),

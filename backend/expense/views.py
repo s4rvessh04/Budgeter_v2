@@ -1,5 +1,8 @@
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.utils.decorators import method_decorator
+
 from rest_framework import generics
-from rest_framework.authentication import BasicAuthentication, SessionAuthentication
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 from knox.auth import TokenAuthentication
 
@@ -7,14 +10,12 @@ from .serializers import (
     ExpenseSerializer,
     SharedExpenseSerializer,
     ExpenseCreateSerializer,
-    SharedExpenseCreateSerializer,
 )
 from .models import Expense, SharedExpense
 
 
 class ExpenseListCreateAPIView(generics.ListCreateAPIView):
     authentication_classes = [
-        TokenAuthentication,
         SessionAuthentication,
     ]
     permission_classes = [IsAuthenticated]
@@ -23,16 +24,12 @@ class ExpenseListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = ExpenseCreateSerializer
 
     def get_serializer_class(self):
-        print(self.request.user)
         if self.request.method == "GET":
             return ExpenseSerializer
         return super().get_serializer_class()
 
-
-class ExpenseRetrieveAPIView(generics.RetrieveAPIView):
-    queryset = Expense.objects.all()
-    serializer_class = ExpenseSerializer
-    lookup_field = "pk"
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
 
 class ExpenseUpdateAPIView(generics.UpdateAPIView):
