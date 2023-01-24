@@ -60,7 +60,7 @@ export function Navbar({ children }: { children: ReactNode }) {
 	const mutation = useMutation({
 		mutationFn: () => axiosLogout.post("/logout/"),
 		onSuccess() {
-			setLocation("/home");
+			setLocation("/");
 		},
 		onError(err) {
 			if (err instanceof Error) {
