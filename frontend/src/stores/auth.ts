@@ -9,7 +9,7 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()((set) => ({
-	isAuthenticated: cookies.get("logged_in") === "true" ? true : false,
+	isAuthenticated: cookies.get("loggedin") === "True" ? true : false,
 	updateIsAuthenticated: (value: boolean) =>
 		set(() => ({ isAuthenticated: value })),
 }));
