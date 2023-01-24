@@ -20,11 +20,10 @@ export const Login = () => {
 
 	const mutation = useMutation({
 		mutationFn: () =>
-			axiosLogin.post(
-				"/login/",
-				{},
-				{ auth: { username: username, password: password } }
-			),
+			axiosLogin.post("/login/", {
+				username: username,
+				password: password,
+			}),
 		onSuccess(data, variables, context) {
 			setLocation("/home");
 		},
