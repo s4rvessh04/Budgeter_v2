@@ -8,3 +8,4 @@ export * from "./NotificationsModal";
 export * from "./QuickSettingsModal";
 export * from "./NewExpenseModal";
 export * from "./ProtectedRoute";
+export * from "./ThemeToggler";
