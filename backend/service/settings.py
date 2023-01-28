@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",
     "rest_framework",
-    "knox",
     "api",
     "expense",
     "friend",
@@ -130,10 +129,6 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-REST_KNOX = {"TOKEN_TTL": timedelta(hours=1)}
-
 CORS_ALLOW_CREDENTIALS = True
-# CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
 CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
 CORS_ORIGIN_WHITELIST = ["http://localhost:5173"]
-CORS_URLS_REGEX = r"^/api/.*"
