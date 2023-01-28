@@ -1,13 +1,9 @@
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.utils.decorators import method_decorator
-
 from rest_framework import generics
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
-from knox.auth import TokenAuthentication
 
 from .serializers import (
-    ExpenseSerializer,
+    ExpenseListSerializer,
     SharedExpenseSerializer,
     ExpenseCreateSerializer,
 )
@@ -15,92 +11,109 @@ from .models import Expense, SharedExpense
 
 
 class ExpenseListCreateAPIView(generics.ListCreateAPIView):
-    authentication_classes = [
-        SessionAuthentication,
-    ]
+    authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = ExpenseListSerializer
+    queryset = Expense.objects.order_by("-date_time").all()
 
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return super().get_queryset()
+        return self.queryset.filter(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        self.serializer_class = ExpenseCreateSerializer
+        return super().create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class ExpenseRetrieveAPIView(generics.RetrieveAPIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = ExpenseListSerializer
     queryset = Expense.objects.all()
-    serializer_class = ExpenseCreateSerializer
+    lookup_field = "pk"
 
-    def get_serializer_class(self):
-        if self.request.method == "GET":
-            return ExpenseSerializer
-        return super().get_serializer_class()
-
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return super().get_queryset()
+        return self.queryset.filter(user=self.request.user)
 
 
 class ExpenseUpdateAPIView(generics.UpdateAPIView):
-    """
-    Updates a single model instance
-    """
-
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = ExpenseCreateSerializer
     queryset = Expense.objects.all()
-    serializer_class = ExpenseSerializer
     lookup_field = "pk"
 
-    def perform_update(self, serializer):
-        return super().perform_update(serializer)
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return super().get_queryset()
+        return self.queryset.filter(user=self.request.user)
 
 
 class ExpenseDestroyAPIView(generics.DestroyAPIView):
-    """
-    Deletes a single model instance
-    """
-
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = ExpenseListSerializer
     queryset = Expense.objects.all()
-    serializer_class = ExpenseSerializer
     lookup_field = "pk"
 
-    def perform_destroy(self, instance):
-        return super().perform_destroy(instance)
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return super().get_queryset()
+        return self.queryset.filter(user=self.request.user)
 
 
-class SharedExpenseListCreateAPIView(generics.ListCreateAPIView):
-    """
-    Get the collection of shared_expense models
-    """
-
-    queryset = SharedExpense.objects.all()
+class SharedExpenseListAPIView(generics.ListAPIView):
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = SharedExpenseSerializer
+    queryset = SharedExpense.objects.order_by("-expense__date_time").all()
 
-    def perform_create(self, serializer):
-        return super().perform_create(serializer)
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return super().get_queryset()
+        return self.queryset.filter(shared_user=self.request.user)
 
 
 class SharedExpenseRetrieveAPIView(generics.RetrieveAPIView):
-    """
-    Get a single expense model
-    """
-
-    queryset = SharedExpense.objects.all()
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = SharedExpenseSerializer
+    queryset = SharedExpense.objects.all()
     lookup_field = "pk"
+
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return super().get_queryset()
+        return self.queryset.filter(shared_user=self.request.user)
 
 
 class SharedExpenseUpdateAPIView(generics.UpdateAPIView):
-    """
-    Updates a single model instance
-    """
-
-    queryset = SharedExpense.objects.all()
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = SharedExpenseSerializer
+    queryset = SharedExpense.objects.all()
     lookup_field = "pk"
 
-    def perform_update(self, serializer):
-        return super().perform_update(serializer)
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return super().get_queryset()
+        return self.queryset.filter(expense__user=self.request.user)
 
 
 class SharedExpenseDestroyAPIView(generics.DestroyAPIView):
-    """
-    Deletes a single model instance
-    """
-
-    queryset = SharedExpense.objects.all()
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = SharedExpenseSerializer
+    queryset = SharedExpense.objects.all()
     lookup_field = "pk"
 
-    def perform_destroy(self, instance):
-        return super().perform_destroy(instance)
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return super().get_queryset()
+        return self.queryset.filter(expense__user=self.request.user)

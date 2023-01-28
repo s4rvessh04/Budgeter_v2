@@ -7,19 +7,31 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Expense',
+            name="Expense",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_time', models.DateTimeField()),
-                ('description', models.CharField(max_length=200)),
-                ('amount', models.DecimalField(decimal_places=2, default=0.0, max_digits=999999999999)),
-                ('is_shared', models.BooleanField(default=False)),
-                ('last_updated', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("date_time", models.DateTimeField()),
+                ("description", models.CharField(max_length=200)),
+                (
+                    "amount",
+                    models.DecimalField(
+                        decimal_places=2, default=0.0, max_digits=999999999999
+                    ),
+                ),
+                ("is_shared", models.BooleanField(default=False)),
+                ("last_updated", models.DateTimeField(auto_now=True)),
             ],
         ),
     ]
