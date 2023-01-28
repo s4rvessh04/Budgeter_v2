@@ -45,7 +45,7 @@ export const ExpenseTable = () => {
 	);
 
 	const { isLoading, error, data, isFetching, status } = useQuery(
-		["data"],
+		["expenses"],
 		() => axiosRequest.get("/expenses/").then((res) => res.data),
 		{
 			refetchOnWindowFocus: false,
@@ -79,41 +79,42 @@ export const ExpenseTable = () => {
 		return;
 	}, [isLoading]);
 
-	function createData(count: number): IExpense[] {
-		let items: IExpense[] = [];
+	// function createData(count: number): IExpense[] {
+	// 	let items: IExpense[] = [];
 
-		for (let i = 0; i < count; i++) {
-			let expense: IExpense = {
-				id: faker.database.mongodbObjectId(),
-				user_id: faker.datatype.number().toString(),
-				description: faker.finance.transactionDescription(),
-				date_time: faker.date.past().toUTCString(),
-				last_update: faker.date.recent().toUTCString(),
-				amount: parseFloat(faker.finance.amount()),
-				is_shared: faker.datatype.boolean(),
-				shared_expenses: [],
-			};
+	// 	for (let i = 0; i < count; i++) {
+	// 		let expense: IExpense = {
+	// 			id: faker.database.mongodbObjectId(),
+	// 			user_id: faker.datatype.number().toString(),
+	// 			description: faker.finance.transactionDescription(),
+	// 			date_time: faker.date.past().toUTCString(),
+	// 			last_update: faker.date.recent().toUTCString(),
+	// 			amount: parseFloat(faker.finance.amount()),
+	// 			is_shared: faker.datatype.boolean(),
+	// 			shared_expenses: [],
+	// 		};
 
-			let sharedExpenses: ISharedExpense[] = [];
+	// 		let sharedExpenses: ISharedExpense[] = [];
 
-			for (let j = 0; j < parseInt(faker.random.numeric()); j++) {
-				sharedExpenses.push({
-					id: faker.database.mongodbObjectId(),
-					expense_id: expense.id,
-					last_update: faker.date.recent().toUTCString(),
-					main_user_id: expense.user_id,
-					shared_user_id: faker.name.fullName(),
-					shared_user_amount: parseFloat(faker.finance.amount()),
-					status: faker.datatype.boolean() === true ? "P" : "UP",
-				});
-			}
-			expense.shared_expenses = sharedExpenses;
-			items.push(expense);
-		}
-		return items;
-	}
+	// 		for (let j = 0; j < parseInt(faker.random.numeric()); j++) {
+	// 			sharedExpenses.push({
+	// 				id: faker.database.mongodbObjectId(),
+	// 				expense_id: expense.id,
+	// 				last_update: faker.date.recent().toUTCString(),
+	// 				main_user_id: expense.user_id,
+	// 				shared_user_id: faker.name.fullName(),
+	// 				shared_user_amount: parseFloat(faker.finance.amount()),
+	// 				status: faker.datatype.boolean() === true ? "P" : "UP",
+	// 			});
+	// 		}
+	// 		expense.shared_expenses = sharedExpenses;
+	// 		items.push(expense);
+	// 	}
+	// 	return items;
+	// }
 
 	function handleModalData(data: IExpense): void {
+		console.log(data);
 		setModalData(data);
 		return onOpen();
 	}

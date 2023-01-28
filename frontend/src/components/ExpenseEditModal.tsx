@@ -307,6 +307,9 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 					</ModalBody>
 
 					<ModalFooter>
+						<Button colorScheme={"red"} variant="ghost" mr="3">
+							Delete
+						</Button>
 						<Button
 							colorScheme="telegram"
 							mr={3}
@@ -321,7 +324,6 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 						>
 							Save
 						</Button>
-						<Button onClick={onClose}>Cancel</Button>
 					</ModalFooter>
 				</ModalContent>
 			</Modal>

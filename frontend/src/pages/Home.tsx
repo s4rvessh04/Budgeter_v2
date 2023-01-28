@@ -1,5 +1,4 @@
 import { Container, Grid, GridItem, useColorModeValue } from "@chakra-ui/react";
-import { useCookies } from "react-cookie";
 import { ExpenseTable, TopCards, Navbar } from "../components";
 import { ExpenseList } from "../components/ExpenseList";
 
