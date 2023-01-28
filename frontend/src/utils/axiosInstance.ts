@@ -1,9 +1,7 @@
 import axios from "axios";
-import { Cookies } from "react-cookie";
 
 import { useAuthStore } from "../stores";
 
-const cookies = new Cookies();
 const BASEURL = "http://localhost:8000";
 
 const parseBaseUrl = (path: string) => BASEURL.concat(path.trim());
@@ -52,6 +50,8 @@ axiosLogout.interceptors.response.use(
 export const axiosRequest = axios.create({
 	baseURL: parseBaseUrl("/api"),
 	withCredentials: true,
+	xsrfCookieName: "csrftoken",
+	xsrfHeaderName: "X-CSRFToken",
 });
 
 axiosRequest.interceptors.request.use(
@@ -65,7 +65,6 @@ axiosRequest.interceptors.request.use(
 
 axiosRequest.interceptors.response.use(
 	(config) => {
-		useAuthStore.setState({ isAuthenticated: true });
 		return config;
 	},
 	(error) => {
