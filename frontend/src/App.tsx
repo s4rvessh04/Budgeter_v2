@@ -1,4 +1,5 @@
-import { Route, Switch } from "wouter";
+import { Cookies } from "react-cookie";
+import { Redirect, Route, Switch } from "wouter";
 import { ProtectedRoute } from "./components";
 
 import {
@@ -8,19 +9,24 @@ import {
 	NewExpense,
 	Expenses,
 	Login,
+	Signup,
 	Landing,
 } from "./pages";
+import { useAuthStore } from "./stores";
 
 function App() {
+	const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
 	return (
 		<Switch>
 			<Route path="/">
-				{/* {isAuthenticated ? <Redirect to="/home" /> : <Landing />} */}
-				<Landing />
+				{isAuthenticated ? <Redirect to="/home" /> : <Landing />}
 			</Route>
 			<Route path="/login">
-				{/* {isAuthenticated ? <Redirect to="/home" /> : <Login />} */}
-				<Login />
+				{isAuthenticated ? <Redirect to="/home" /> : <Login />}
+			</Route>
+			<Route path="/signup">
+				{isAuthenticated ? <Redirect to="/home" /> : <Signup />}
 			</Route>
 			<ProtectedRoute path="/home">
 				<Home />
