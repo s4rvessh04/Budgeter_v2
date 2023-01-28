@@ -13,16 +13,15 @@ import {
 	useDisclosure,
 	BoxProps,
 	FlexProps,
-	useColorMode,
 	useToast,
+	HStack,
+	Image,
 } from "@chakra-ui/react";
 import {
 	FiHome,
 	FiUsers,
 	FiSettings,
 	FiMenu,
-	FiSun,
-	FiMoon,
 	FiPlus,
 	FiTool,
 	FiLogOut,
@@ -34,9 +33,12 @@ import {
 	NotificationsModal,
 	QuickSettingsModal,
 	NewExpenseModal,
+	ThemeToggler,
 } from "../components";
 import { useMutation } from "react-query";
 import { axiosLogout } from "../utils";
+
+import viteSvg from "../../public/vite.svg";
 
 interface LinkItemProps {
 	name: string;
@@ -45,7 +47,6 @@ interface LinkItemProps {
 }
 
 const LinkItems: Array<LinkItemProps> = [
-	// { name: "New Expense", path: "/new", icon: FiPlus },
 	{ name: "Home", path: "/home", icon: FiHome },
 	{ name: "Friends", path: "/friends", icon: FiUsers },
 	{ name: "Expenses", path: "/expenses", icon: FiDollarSign },
@@ -59,7 +60,14 @@ export function Navbar({ children }: { children: ReactNode }) {
 
 	const mutation = useMutation({
 		mutationFn: () => axiosLogout.post("/logout/"),
-		onSuccess() {
+		onSuccess({ data }) {
+			toast({
+				title: "Logout Successful!",
+				description: data.detail,
+				status: "success",
+				duration: 2500,
+				isClosable: true,
+			});
 			setLocation("/");
 		},
 		onError(err) {
@@ -75,20 +83,7 @@ export function Navbar({ children }: { children: ReactNode }) {
 		},
 	});
 
-	async function handleLogut() {
-		// const res = await axiosLogout.post("/logout/");
-		// console.log(res);
-		// if (res.statusText == "OK") {
-		// 	setLocation("/home");
-		// } else {
-		// 	toast({
-		// 		title: "Error Occured!",
-		// 		description: String("Error"),
-		// 		status: "error",
-		// 		duration: 9000,
-		// 		isClosable: true,
-		// 	});
-		// }
+	async function handleLogout() {
 		mutation.mutate();
 	}
 
@@ -102,8 +97,9 @@ export function Navbar({ children }: { children: ReactNode }) {
 			bg={useColorModeValue("gray.100", "gray.900")}
 		>
 			<SidebarContent
+				logoutLoading={mutation.isLoading}
 				onClose={() => onClose}
-				handleLogout={handleLogut}
+				handleLogout={handleLogout}
 				display={{ base: "none", lg: "block" }}
 			/>
 			<Drawer
@@ -117,8 +113,9 @@ export function Navbar({ children }: { children: ReactNode }) {
 			>
 				<DrawerContent>
 					<SidebarContent
+						logoutLoading={mutation.isLoading}
 						onClose={onClose}
-						handleLogout={handleLogut}
+						handleLogout={handleLogout}
 					/>
 				</DrawerContent>
 			</Drawer>
@@ -181,11 +178,15 @@ const NavLink = ({ icon, path, children, ...rest }: NavItemProps) => {
 interface SidebarProps extends BoxProps {
 	onClose: () => void;
 	handleLogout: () => void;
+	logoutLoading: boolean;
 }
 
-const SidebarContent = ({ onClose, handleLogout, ...rest }: SidebarProps) => {
-	const { colorMode, toggleColorMode } = useColorMode();
-
+const SidebarContent = ({
+	onClose,
+	handleLogout,
+	logoutLoading,
+	...rest
+}: SidebarProps) => {
 	const notificationsModal = useDisclosure();
 	const quickSettingsModal = useDisclosure();
 	const newExpenseModal = useDisclosure();
@@ -208,9 +209,16 @@ const SidebarContent = ({ onClose, handleLogout, ...rest }: SidebarProps) => {
 						mx="8"
 						justifyContent="space-between"
 					>
-						<Text fontSize="2xl" fontWeight="bold">
-							Budgeter
-						</Text>
+						<HStack>
+							<Image src={viteSvg} h="30px" />
+							<Text
+								fontSize="2xl"
+								fontWeight="bold"
+								fontFamily={"monospace"}
+							>
+								Budgeter
+							</Text>
+						</HStack>
 						<CloseButton
 							display={{ base: "flex", lg: "none" }}
 							onClick={onClose}
@@ -267,14 +275,7 @@ const SidebarContent = ({ onClose, handleLogout, ...rest }: SidebarProps) => {
 						px={{ base: "4", lg: "4" }}
 						gap={4}
 					>
-						<IconButton
-							onClick={toggleColorMode}
-							aria-label="Theme toggler"
-							icon={colorMode === "dark" ? <FiSun /> : <FiMoon />}
-							_focus={{ outline: "none" }}
-							w={"full"}
-						/>
-
+						<ThemeToggler w={"full"} aria-label="Theme toggler" />
 						<IconButton
 							aria-label="notification-btn"
 							icon={<FiBell />}
@@ -288,6 +289,7 @@ const SidebarContent = ({ onClose, handleLogout, ...rest }: SidebarProps) => {
 							onClick={() => quickSettingsModal.onOpen()}
 						/>
 						<IconButton
+							isLoading={logoutLoading}
 							w={"full"}
 							aria-label="log-out-btn"
 							icon={<FiLogOut />}
@@ -335,10 +337,12 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
 				aria-label="open menu"
 				icon={<FiMenu />}
 			/>
-
-			<Text fontSize="2xl" ml={{ base: 4, lg: 8 }} fontWeight="bold">
-				Budgeter
-			</Text>
+			<HStack ml={{ base: 4, lg: 8 }}>
+				<Image src={viteSvg} h="30px" />
+				<Text fontSize="2xl" fontWeight="bold" fontFamily={"monospace"}>
+					Budgeter
+				</Text>
+			</HStack>
 		</Flex>
 	);
 };
