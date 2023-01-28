@@ -6,6 +6,7 @@
 	],
 	"settings": {
 		"python.formatting.provider": "black",
-		"python.terminal.activateEnvironment": true
+		"python.terminal.activateEnvironment": true,
+		"python.analysis.typeCheckingMode": "off"
 	}
 }
