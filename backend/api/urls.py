@@ -9,4 +9,5 @@ urlpatterns = [
     path("auth/logout/", views.LogoutView.as_view()),
     path("expenses/", include("expense.urls")),
     path("friends/", include("friend.urls")),
+    path("users/", include("user.urls")),
 ]

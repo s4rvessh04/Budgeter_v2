@@ -14,19 +14,19 @@ class ExpenseListCreateAPIView(generics.ListCreateAPIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = ExpenseListSerializer
-    queryset = Expense.objects.order_by("-date_time").all()
+    queryset = Expense.objects.order_by("-create_dt").all()
 
     def get_queryset(self):
         if self.request.user.is_superuser:
             return super().get_queryset()
-        return self.queryset.filter(user=self.request.user)
+        return self.queryset.filter(owner=self.request.user)
 
     def create(self, request, *args, **kwargs):
         self.serializer_class = ExpenseCreateSerializer
         return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save(owner=self.request.user)
 
 
 class ExpenseRetrieveAPIView(generics.RetrieveAPIView):
@@ -39,7 +39,7 @@ class ExpenseRetrieveAPIView(generics.RetrieveAPIView):
     def get_queryset(self):
         if self.request.user.is_superuser:
             return super().get_queryset()
-        return self.queryset.filter(user=self.request.user)
+        return self.queryset.filter(owner=self.request.user)
 
 
 class ExpenseUpdateAPIView(generics.UpdateAPIView):
@@ -52,7 +52,7 @@ class ExpenseUpdateAPIView(generics.UpdateAPIView):
     def get_queryset(self):
         if self.request.user.is_superuser:
             return super().get_queryset()
-        return self.queryset.filter(user=self.request.user)
+        return self.queryset.filter(owner=self.request.user)
 
 
 class ExpenseDestroyAPIView(generics.DestroyAPIView):
@@ -65,19 +65,19 @@ class ExpenseDestroyAPIView(generics.DestroyAPIView):
     def get_queryset(self):
         if self.request.user.is_superuser:
             return super().get_queryset()
-        return self.queryset.filter(user=self.request.user)
+        return self.queryset.filter(owner=self.request.user)
 
 
 class SharedExpenseListAPIView(generics.ListAPIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = SharedExpenseSerializer
-    queryset = SharedExpense.objects.order_by("-expense__date_time").all()
+    queryset = SharedExpense.objects.order_by("-expense__create_dt").all()
 
     def get_queryset(self):
         if self.request.user.is_superuser:
             return super().get_queryset()
-        return self.queryset.filter(shared_user=self.request.user)
+        return self.queryset.filter(loaner=self.request.user)
 
 
 class SharedExpenseRetrieveAPIView(generics.RetrieveAPIView):
@@ -90,7 +90,7 @@ class SharedExpenseRetrieveAPIView(generics.RetrieveAPIView):
     def get_queryset(self):
         if self.request.user.is_superuser:
             return super().get_queryset()
-        return self.queryset.filter(shared_user=self.request.user)
+        return self.queryset.filter(loaner=self.request.user)
 
 
 class SharedExpenseUpdateAPIView(generics.UpdateAPIView):
@@ -103,7 +103,7 @@ class SharedExpenseUpdateAPIView(generics.UpdateAPIView):
     def get_queryset(self):
         if self.request.user.is_superuser:
             return super().get_queryset()
-        return self.queryset.filter(expense__user=self.request.user)
+        return self.queryset.filter(expense__owner=self.request.user)
 
 
 class SharedExpenseDestroyAPIView(generics.DestroyAPIView):
@@ -116,4 +116,4 @@ class SharedExpenseDestroyAPIView(generics.DestroyAPIView):
     def get_queryset(self):
         if self.request.user.is_superuser:
             return super().get_queryset()
-        return self.queryset.filter(expense__user=self.request.user)
+        return self.queryset.filter(expense__owner=self.request.user)

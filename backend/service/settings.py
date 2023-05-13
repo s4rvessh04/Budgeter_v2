@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "api",
     "expense",
     "friend",
+    "user",
 ]
 
 MIDDLEWARE = [

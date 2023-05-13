@@ -1,6 +1,5 @@
 import React from "react";
 import { useQuery } from "react-query";
-import { faker } from "@faker-js/faker";
 import { FiUser, FiUsers } from "react-icons/fi";
 import {
 	Table,
@@ -44,7 +43,7 @@ export const ExpenseTable = () => {
 		shallow
 	);
 
-	const { isLoading, error, data, isFetching, status } = useQuery(
+	const { isLoading, data, isFetching } = useQuery(
 		["expenses"],
 		() => axiosRequest.get("/expenses/").then((res) => res.data),
 		{
@@ -77,7 +76,7 @@ export const ExpenseTable = () => {
 			updateSumExpensesAmount(expensesSum);
 		}
 		return;
-	}, [isLoading]);
+	}, [isFetching]);
 
 	// function createData(count: number): IExpense[] {
 	// 	let items: IExpense[] = [];

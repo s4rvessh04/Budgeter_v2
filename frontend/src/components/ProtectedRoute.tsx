@@ -4,7 +4,6 @@ import { useAuthStore } from "../stores";
 
 export const ProtectedRoute = (props: RouteProps) => {
 	const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-	console.log(isAuthenticated);
 
 	const renderChild = isAuthenticated ? props.children : <Redirect to="/" />;
 

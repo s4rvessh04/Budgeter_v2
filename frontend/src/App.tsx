@@ -1,4 +1,3 @@
-import { Cookies } from "react-cookie";
 import { Redirect, Route, Switch } from "wouter";
 import { ProtectedRoute } from "./components";
 

@@ -34,8 +34,9 @@ import {
 	GridItem,
 } from "@chakra-ui/react";
 import { FiChevronDown, FiUser, FiUsers } from "react-icons/fi";
-import { parseAmount, parseDate } from "../utils";
+import { axiosRequest, parseDate } from "../utils";
 import { IExpense, ISharedExpense } from "../types";
+import { useMutation, useQueryClient } from "react-query";
 
 interface Props {
 	onClose: () => void;
@@ -45,17 +46,45 @@ interface Props {
 
 export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 	const toast = useToast();
+	const queryClient = useQueryClient();
 	const dateTime = parseDate(data!?.date_time);
 
-	const [sharedExpenses, setSharedExpenses] = React.useState<
-		ISharedExpense[]
-	>(data!?.shared_expenses);
+	const [sharedExpenses, setSharedExpenses] = React.useState(
+		data!?.shared_expenses
+	);
 
 	React.useEffect(() => {
 		setSharedExpenses(data!?.shared_expenses);
 		console.log(data);
 		return;
 	}, [data]);
+
+	const mutation = useMutation({
+		mutationFn: () => axiosRequest.delete(`/expenses/${data!.id}/delete`),
+		onSuccess: () => {
+			queryClient.invalidateQueries("expenses");
+			toast({
+				title: "Expense deleted.",
+				status: "success",
+				duration: 3000,
+				isClosable: true,
+			});
+			onClose();
+		},
+		onError: (err: any) => {
+			toast({
+				title: "Expense could not be deleted.",
+				description: err?.response?.data?.message,
+				status: "error",
+				duration: 3000,
+				isClosable: true,
+			});
+		},
+	});
+
+	const handleDeleteExpense = () => {
+		mutation.mutate();
+	};
 
 	function handleSharedExpUserCount(type: "inc" | "dec"): void {
 		if (type === "inc") {
@@ -161,13 +190,11 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 										>
 											<Select
 												defaultValue={
-													sharedExpense.shared_user_id
+													sharedExpense.shared_user
 												}
 											>
 												<option>
-													{
-														sharedExpense.shared_user_id
-													}
+													{sharedExpense.shared_user}
 												</option>
 											</Select>
 										</GridItem>
@@ -179,10 +206,8 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 										>
 											<NumberInput
 												step={100}
-												defaultValue={
-													sharedExpense.shared_user_amount
-												}
 												min={0}
+												value={sharedExpense.amount}
 											>
 												<NumberInputField />
 												<NumberInputStepper>
@@ -307,7 +332,13 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 					</ModalBody>
 
 					<ModalFooter>
-						<Button colorScheme={"red"} variant="ghost" mr="3">
+						<Button
+							colorScheme={"red"}
+							variant="ghost"
+							mr="3"
+							isLoading={mutation.isLoading}
+							onClick={handleDeleteExpense}
+						>
 							Delete
 						</Button>
 						<Button

@@ -84,14 +84,7 @@ export const Login = () => {
 
 	return (
 		<Box minH={"100vh"} minW="100vw" position="relative">
-			<Box
-				position="absolute"
-				w={"full"}
-				bgGradient={
-					"linear(to-b, whiteAlpha.400, whiteAlpha.50, whiteAlpha.400)"
-				}
-				minH={"full"}
-			>
+			<Box position="absolute" w={"full"} minH={"full"}>
 				<Container
 					position={"absolute"}
 					left={0}
@@ -132,6 +125,7 @@ export const Login = () => {
 										border: "none",
 										color: "blue.600",
 									}}
+									onClick={() => setLocation("/signup")}
 								>
 									Sign up
 								</Button>
@@ -148,7 +142,7 @@ export const Login = () => {
 						bgColor={useColorModeValue("white", "gray.800")}
 					>
 						<form onSubmit={onSubmit}>
-							<FormControl mb={8}>
+							<FormControl mb={8} isRequired>
 								<FormLabel
 									fontSize={"sm"}
 									color={useColorModeValue(
@@ -166,7 +160,7 @@ export const Login = () => {
 									}
 								/>
 							</FormControl>
-							<FormControl mb={8}>
+							<FormControl mb={8} isRequired>
 								<FormLabel
 									fontSize={"sm"}
 									color={useColorModeValue(

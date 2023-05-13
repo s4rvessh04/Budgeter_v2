@@ -5,8 +5,10 @@
 		}
 	],
 	"settings": {
+		"python.defaultInterpreterPath": "${workspaceFolderBasename}/backend/venv/Scripts/python.exe",
 		"python.formatting.provider": "black",
 		"python.terminal.activateEnvironment": true,
-		"python.analysis.typeCheckingMode": "off"
+		"python.analysis.typeCheckingMode": "off",
+		"python.terminal.activateEnvInCurrentTerminal": true
 	}
 }

@@ -54,6 +54,8 @@ class SignupView(APIView):
     def post(self, request, format=None):
         username = request.data["username"]
         password = request.data["password"]
+        first_name = request.data["first_name"]
+        last_name = request.data["last_name"]
         email = request.data["email"]
 
         if not username or not password or not email:
@@ -61,6 +63,8 @@ class SignupView(APIView):
 
         try:
             user = User.objects.create_user(username, email, password)
+            user.first_name = first_name
+            user.last_name = last_name
             user.save()
         except IntegrityError:
             return Response({"detail": "User already exists."}, status=400)

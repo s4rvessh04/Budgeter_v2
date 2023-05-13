@@ -22,7 +22,7 @@ import {
 	useToast,
 } from "@chakra-ui/react";
 
-import { axiosLogin, axiosRequest } from "../utils";
+import { axiosRequest } from "../utils";
 import viteSvg from "../../public/vite.svg";
 import loginBackground from "../assets/login-background.jpg";
 import { Cookies } from "react-cookie";
@@ -34,6 +34,8 @@ export const Signup = () => {
 	const [, setLocation] = useLocation();
 	const [username, setUsername] = React.useState<string>("");
 	const [password, setPassword] = React.useState<string>("");
+	const [firstName, setFirstName] = React.useState<string>("");
+	const [lastName, setLastName] = React.useState<string>("");
 	const [email, setEmail] = React.useState<string>("");
 	const [viewPassword, setViewPassword] = React.useState<boolean>(false);
 
@@ -42,6 +44,8 @@ export const Signup = () => {
 			axiosRequest.post("/auth/signup/", {
 				username: username,
 				password: password,
+				first_name: firstName,
+				last_name: lastName,
 				email: email,
 			}),
 		onSuccess(data, variables, context) {
@@ -77,20 +81,26 @@ export const Signup = () => {
 	}
 
 	return (
-		<Box minH={"100vh"} minW="100vw" position="relative">
+		<Box
+			minH={"100vh"}
+			minW="100vw"
+			position="relative"
+			overflowY={"hidden"}
+		>
 			<Box
 				position="absolute"
 				w={"full"}
+				overflowY="auto"
 				bgGradient={
 					"linear(to-b, whiteAlpha.400, whiteAlpha.50, whiteAlpha.400)"
 				}
-				minH={"full"}
+				minH={"100vh"}
+				minW={"100vw"}
 			>
 				<Container
 					position={"absolute"}
 					left={0}
 					right={0}
-					w="full"
 					maxW={"md"}
 					m="auto"
 				>
@@ -126,6 +136,7 @@ export const Signup = () => {
 										border: "none",
 										color: "blue.600",
 									}}
+									onClick={() => setLocation("/login")}
 								>
 									Log in
 								</Button>
@@ -135,7 +146,7 @@ export const Signup = () => {
 					<Box
 						shadow={"lg"}
 						rounded="xl"
-						mt={5}
+						my={5}
 						px={5}
 						py={8}
 						w="full"
@@ -147,6 +158,44 @@ export const Signup = () => {
 								name="csrfmiddlewaretoken"
 								value={cookies.get("csrftoken")}
 							/>
+							<HStack spacing="4" mb={8}>
+								<FormControl isRequired>
+									<FormLabel
+										fontSize={"sm"}
+										color={useColorModeValue(
+											"gray.700",
+											"white"
+										)}
+									>
+										First Name
+									</FormLabel>
+									<Input
+										type={"text"}
+										name="first_name"
+										onChange={(e) =>
+											setFirstName(e.target.value)
+										}
+									/>
+								</FormControl>
+								<FormControl isRequired>
+									<FormLabel
+										fontSize={"sm"}
+										color={useColorModeValue(
+											"gray.700",
+											"white"
+										)}
+									>
+										Last Name
+									</FormLabel>
+									<Input
+										type={"text"}
+										name="last_name"
+										onChange={(e) =>
+											setLastName(e.target.value)
+										}
+									/>
+								</FormControl>
+							</HStack>
 							<FormControl mb={8} isRequired>
 								<FormLabel
 									fontSize={"sm"}
@@ -224,13 +273,14 @@ export const Signup = () => {
 							</Button>
 						</form>{" "}
 					</Box>
-				</Container>{" "}
+				</Container>
 			</Box>
 			<Image
 				src={loginBackground}
 				objectFit="cover"
 				objectPosition={"center"}
 				color="white"
+				minH="100vh"
 				h="100vh"
 				w="full"
 			/>

@@ -5,12 +5,7 @@ import {
 	Flex,
 	FormControl,
 	FormLabel,
-	Icon,
 	Input,
-	Menu,
-	MenuButton,
-	MenuItem,
-	MenuList,
 	Modal,
 	ModalBody,
 	ModalCloseButton,
@@ -25,14 +20,11 @@ import {
 	Select,
 	Switch,
 	Text,
-	useColorModeValue,
 	useToast,
 } from "@chakra-ui/react";
-import { FiChevronDown } from "react-icons/fi";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import { axiosRequest } from "../utils";
 import { Cookies } from "react-cookie";
-import { faker } from "@faker-js/faker";
 
 interface Props {
 	onClose: () => void;
@@ -59,18 +51,17 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 	const queryClient = useQueryClient();
 
 	const [isShared, setIsShared] = React.useState(false);
-	const [sharedExpenseData, setSharedExpenseData] = React.useState<
-		SharedExpense[]
-	>([]);
+	const [sharedExpenseData, setSharedExpenseData] = React.useState([]);
+	const [totalAmount, setTotalAmount] = React.useState(0);
+	// const [friends, setFriends] = React.useState([]);
 
-	const friends = [
-		{ name: faker.name.fullName(), id: faker.datatype.uuid() },
-		{ name: faker.name.fullName(), id: faker.datatype.uuid() },
-		{ name: faker.name.fullName(), id: faker.datatype.uuid() },
-		{ name: faker.name.fullName(), id: faker.datatype.uuid() },
-		{ name: faker.name.fullName(), id: faker.datatype.uuid() },
-		{ name: faker.name.fullName(), id: faker.datatype.uuid() },
-	];
+	const { data, isLoading, error } = useQuery(
+		"friends",
+		() => axiosRequest.get("/friends/").then((res) => res.data),
+		{
+			refetchOnWindowFocus: false,
+		}
+	);
 
 	const mutation = useMutation({
 		mutationFn: (formData: FormData) =>
@@ -84,6 +75,7 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 				duration: 2500,
 				isClosable: true,
 			});
+			onClose();
 		},
 		onError: (err: any) => {
 			toast({
@@ -106,8 +98,9 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 		const shared_amounts = [...formDataElement.getAll("shared_amount")];
 
 		shared_users.forEach((user, index) => {
+			// setTotalAmount((prev) => prev + Number(shared_amounts[index]);
 			shared_expense.push({
-				name: user,
+				shared_user_id: user,
 				amount: shared_amounts[index],
 				status: "UP",
 			});
@@ -121,7 +114,6 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 		formDataFinal.shared_expenses = shared_expense;
 		formDataFinal.date_time = new Date().toISOString();
 
-		console.log(formDataFinal);
 		mutation.mutate(formDataFinal);
 	};
 
@@ -167,6 +159,9 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 									step={200}
 									defaultValue={0}
 									min={0}
+									onChange={(val) =>
+										setTotalAmount(Number(val))
+									}
 								>
 									<NumberInputField name="amount" />
 									<NumberInputStepper>
@@ -193,16 +188,14 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 									{sharedExpenseData.map((item, index) => (
 										<Flex gap="4" mb="4" key={index}>
 											<Select name="shared_user">
-												{friends.map(
-													(friend, index) => (
-														<option
-															value={friend.name}
-															key={index}
-														>
-															{friend.name}
-														</option>
-													)
-												)}
+												{data.map((item, index) => (
+													<option
+														value={item.id}
+														key={index}
+													>
+														{`${item.first_name} ${item.last_name}`}
+													</option>
+												))}
 											</Select>
 											<NumberInput
 												step={100}
@@ -244,10 +237,14 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 										Final Amount
 									</Text>
 									<Text fontSize="lg" fontWeight={"bold"}>
-										{4000}
+										{totalAmount}
 									</Text>
 								</Box>
-								<Button colorScheme={"telegram"} type="submit">
+								<Button
+									colorScheme={"telegram"}
+									type="submit"
+									isLoading={mutation.isLoading}
+								>
 									Save Expense
 								</Button>
 							</Flex>

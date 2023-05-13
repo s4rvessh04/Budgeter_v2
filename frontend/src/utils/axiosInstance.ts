@@ -9,6 +9,8 @@ const parseBaseUrl = (path: string) => BASEURL.concat(path.trim());
 export const axiosLogin = axios.create({
 	baseURL: parseBaseUrl("/api/auth"),
 	withCredentials: true,
+	xsrfCookieName: "csrftoken",
+	xsrfHeaderName: "X-CSRFToken",
 });
 
 axiosLogin.interceptors.response.use(

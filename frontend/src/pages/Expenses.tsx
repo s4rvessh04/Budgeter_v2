@@ -20,66 +20,75 @@ import {
 import { Navbar } from "../components";
 import { FiFilter, FiSearch, FiUser, FiUsers } from "react-icons/fi";
 import { faker } from "@faker-js/faker";
-import { parseDate, parseAmount } from "../utils";
+import { parseDate, parseAmount, axiosRequest } from "../utils";
 import { useQuery } from "react-query";
 
 import { ExpenseEditModal } from "../components";
 import { IExpense, ISharedExpense } from "../types";
-import axios from "axios";
 
 export const Expenses = () => {
 	const { isOpen, onOpen, onClose } = useDisclosure();
 
-	const [loaded, setLoaded] = React.useState<boolean>(false);
+	// const [loaded, setLoaded] = React.useState<boolean>(false);
 	const [expenses, setExpenses] = React.useState<IExpense[]>();
 	const [modalData, setModalData] = React.useState<IExpense>();
 
-	const { isLoading, error, data, isFetching } = useQuery(["data"], () => {
-		const data = axios
-			.get("https://jsonplaceholder.typicode.com/todos/1")
-			.then((res) => res.data);
-		return data;
-	});
-
-	React.useEffect(() => {
-		setExpenses(createData(10));
-		setLoaded(true);
-		return;
-	}, []);
-
-	function createData(count: number): IExpense[] {
-		let items: IExpense[] = [];
-
-		for (let i = 0; i < count; i++) {
-			let expense: IExpense = {
-				id: faker.database.mongodbObjectId(),
-				user_id: faker.datatype.number().toString(),
-				description: faker.finance.transactionDescription(),
-				date_time: faker.date.past().toUTCString(),
-				last_update: faker.date.recent().toUTCString(),
-				amount: parseFloat(faker.finance.amount()),
-				is_shared: faker.datatype.boolean(),
-				shared_expenses: [],
-			};
-
-			let sharedExpenses: ISharedExpense[] = [];
-
-			for (let j = 0; j < parseInt(faker.random.numeric()); j++) {
-				sharedExpenses.push({
-					id: faker.database.mongodbObjectId(),
-					expense_id: expense.id,
-					last_update: faker.date.recent().toUTCString(),
-					main_user_id: expense.user_id,
-					shared_user_id: faker.name.fullName(),
-					shared_user_amount: parseFloat(faker.finance.amount()),
-					status: faker.datatype.boolean() === true ? "P" : "UP",
-				});
-			}
-			expense.shared_expenses = sharedExpenses;
-			items.push(expense);
+	const { isLoading, data, isFetching } = useQuery(
+		["expenses"],
+		() => axiosRequest.get("/expenses/").then((res) => res.data),
+		{
+			refetchOnWindowFocus: false,
 		}
-		return items;
-	}
+	);
+
+	console.log(data);
+
+	// const { isLoading, error, data, isFetching } = useQuery(["data"], () => {
+	// 	const data = axios
+	// 		.get("https://jsonplaceholder.typicode.com/todos/1")
+	// 		.then((res) => res.data);
+	// 	return data;
+	// });
+
+	// React.useEffect(() => {
+	// 	setExpenses(createData(10));
+	// 	setLoaded(true);
+	// 	return;
+	// }, []);
+
+	// function createData(count: number): IExpense[] {
+	// 	let items: IExpense[] = [];
+
+	// 	for (let i = 0; i < count; i++) {
+	// 		let expense: IExpense = {
+	// 			id: faker.database.mongodbObjectId(),
+	// 			user_id: faker.datatype.number().toString(),
+	// 			description: faker.finance.transactionDescription(),
+	// 			date_time: faker.date.past().toUTCString(),
+	// 			last_update: faker.date.recent().toUTCString(),
+	// 			amount: parseFloat(faker.finance.amount()),
+	// 			is_shared: faker.datatype.boolean(),
+	// 			shared_expenses: [],
+	// 		};
+
+	// 		let sharedExpenses: ISharedExpense[] = [];
+
+	// 		for (let j = 0; j < parseInt(faker.random.numeric()); j++) {
+	// 			sharedExpenses.push({
+	// 				id: faker.database.mongodbObjectId(),
+	// 				expense_id: expense.id,
+	// 				last_update: faker.date.recent().toUTCString(),
+	// 				main_user_id: expense.user_id,
+	// 				shared_user_id: faker.name.fullName(),
+	// 				shared_user_amount: parseFloat(faker.finance.amount()),
+	// 				status: faker.datatype.boolean() === true ? "P" : "UP",
+	// 			});
+	// 		}
+	// 		expense.shared_expenses = sharedExpenses;
+	// 		items.push(expense);
+	// 	}
+	// 	return items;
+	// }
 
 	function handleModalData(data: IExpense): void {
 		setModalData(data);
@@ -129,7 +138,7 @@ export const Expenses = () => {
 					}}
 					gap={{ base: 4, lg: 6 }}
 				>
-					{expenses?.map((expense, key) => (
+					{data?.map((expense, key) => (
 						<GridItem
 							p="4"
 							rounded="lg"
