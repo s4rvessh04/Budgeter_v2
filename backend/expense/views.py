@@ -4,8 +4,9 @@ from rest_framework.permissions import IsAuthenticated
 
 from .serializers import (
     ExpenseListSerializer,
-    SharedExpenseSerializer,
+    SharedExpenseBaseSerializer,
     ExpenseCreateSerializer,
+    ExpenseUpdateSerializer,
 )
 from .models import Expense, SharedExpense
 
@@ -45,7 +46,7 @@ class ExpenseRetrieveAPIView(generics.RetrieveAPIView):
 class ExpenseUpdateAPIView(generics.UpdateAPIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = ExpenseCreateSerializer
+    serializer_class = ExpenseUpdateSerializer
     queryset = Expense.objects.all()
     lookup_field = "pk"
 
@@ -71,7 +72,7 @@ class ExpenseDestroyAPIView(generics.DestroyAPIView):
 class SharedExpenseListAPIView(generics.ListAPIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = SharedExpenseSerializer
+    serializer_class = SharedExpenseBaseSerializer
     queryset = SharedExpense.objects.order_by("-expense__create_dt").all()
 
     def get_queryset(self):
@@ -83,7 +84,7 @@ class SharedExpenseListAPIView(generics.ListAPIView):
 class SharedExpenseRetrieveAPIView(generics.RetrieveAPIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = SharedExpenseSerializer
+    serializer_class = SharedExpenseBaseSerializer
     queryset = SharedExpense.objects.all()
     lookup_field = "pk"
 
@@ -96,7 +97,7 @@ class SharedExpenseRetrieveAPIView(generics.RetrieveAPIView):
 class SharedExpenseUpdateAPIView(generics.UpdateAPIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = SharedExpenseSerializer
+    serializer_class = SharedExpenseBaseSerializer
     queryset = SharedExpense.objects.all()
     lookup_field = "pk"
 
@@ -109,7 +110,7 @@ class SharedExpenseUpdateAPIView(generics.UpdateAPIView):
 class SharedExpenseDestroyAPIView(generics.DestroyAPIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = SharedExpenseSerializer
+    serializer_class = SharedExpenseBaseSerializer
     queryset = SharedExpense.objects.all()
     lookup_field = "pk"
 
