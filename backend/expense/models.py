@@ -7,7 +7,6 @@ class Expense(models.Model):
     create_dt = models.DateTimeField(auto_now_add=True)
     update_dt = models.DateTimeField(auto_now=True)
     description = models.CharField(max_length=200)
-    is_shared = models.BooleanField(default=False)
     amount = models.DecimalField(decimal_places=2, max_digits=999999999999)
 
     # Related Fields
