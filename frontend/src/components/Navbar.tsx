@@ -121,7 +121,10 @@ export function Navbar({ children }: { children: ReactNode }) {
 			</Drawer>
 			{/* mobilenav */}
 			<MobileNav display={{ base: "flex", lg: "none" }} onOpen={onOpen} />
-			<Box ml={{ base: 0, lg: 60 }} py={{ base: 5, lg: 2 }}>
+			<Box
+				ml={{ base: 0, lg: 60 }}
+				// py={{ base: 5, lg: 2 }}
+			>
 				{children}
 			</Box>
 		</Box>

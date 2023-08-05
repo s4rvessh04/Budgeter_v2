@@ -131,7 +131,7 @@ export const Friends = () => {
 								>
 									<Flex gap={2}>
 										<Avatar
-											name={val.first_name}
+											name={val.full_name}
 											src="https://bit.ly/broken-link"
 										/>
 										<Box>
@@ -143,7 +143,7 @@ export const Friends = () => {
 													"white"
 												)}
 											>
-												{`${val.first_name} ${val.last_name}`}
+												{val.full_name}
 											</Text>
 											<Text
 												fontSize={"smaller"}

@@ -189,7 +189,7 @@ export const ExpenseTable = () => {
 													<Text fontSize={"sm"}>
 														{
 															parseDate(
-																expense.date_time
+																expense.create_dt
 															).date
 														}
 													</Text>
@@ -204,7 +204,7 @@ export const ExpenseTable = () => {
 													>
 														{
 															parseDate(
-																expense.date_time
+																expense.create_dt
 															).time
 														}
 													</Text>
@@ -260,7 +260,9 @@ export const ExpenseTable = () => {
 													rounded={"full"}
 												>
 													<TagLeftIcon boxSize="12px">
-														{expense?.is_shared ? (
+														{expense
+															?.shared_expenses
+															.length > 0 ? (
 															<FiUsers
 																size={"24px"}
 															/>
@@ -271,7 +273,9 @@ export const ExpenseTable = () => {
 														)}
 													</TagLeftIcon>
 													<TagLabel>
-														{expense?.is_shared
+														{expense
+															?.shared_expenses
+															.length > 0
 															? "Shared"
 															: "Self"}
 													</TagLabel>

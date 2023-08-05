@@ -6,12 +6,22 @@ export const Home = () => {
 	return (
 		<Navbar>
 			<Container
-				maxW={{ base: "container.lg", xl: "container.xl" }}
+				minW={{
+					base: "container.sm",
+					lg: "container.md",
+					xl: "container.xl",
+				}}
+				minH={{ xl: "100vh", base: "full" }}
+				maxW={"full"}
+				display={"flex"}
+				flexDirection={"column"}
 				px={{ base: 2, md: 4, lg: 4 }}
+				py={{ base: 2, md: 4, lg: 4 }}
 			>
 				<TopCards />
 				<Grid
 					h={{ base: "5xl", lg: "xl" }}
+					flex={1}
 					templateColumns="repeat(6, 1fr)"
 					gap={5}
 				>
