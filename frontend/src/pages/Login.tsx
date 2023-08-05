@@ -1,6 +1,7 @@
 import React, { FormEvent } from "react";
 import { useMutation } from "react-query";
 import { useLocation } from "wouter";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import {
 	Box,
@@ -26,20 +27,25 @@ import { axiosLogin } from "../utils";
 import viteSvg from "../../public/vite.svg";
 import loginBackground from "../assets/login-background.jpg";
 
+interface ILoginInput {
+	username: string;
+	password: string;
+}
+
 export const Login = () => {
 	const toast = useToast();
 
 	const [, setLocation] = useLocation();
-	const [username, setUsername] = React.useState<string>("");
-	const [password, setPassword] = React.useState<string>("");
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm<ILoginInput>();
+
 	const [viewPassword, setViewPassword] = React.useState<boolean>(false);
 
 	const mutation = useMutation({
-		mutationFn: () =>
-			axiosLogin.post("/login/", {
-				username: username,
-				password: password,
-			}),
+		mutationFn: (data: ILoginInput) => axiosLogin.post("/login/", data),
 		onSuccess(data, variables, context) {
 			toast({
 				title: "Authentication Successful!",
@@ -73,10 +79,9 @@ export const Login = () => {
 		},
 	});
 
-	function onSubmit(e: FormEvent) {
-		e.preventDefault();
-		mutation.mutate();
-	}
+	const onSubmit: SubmitHandler<ILoginInput> = (data) => {
+		mutation.mutate(data);
+	};
 
 	function toggleViewPass() {
 		setViewPassword(!viewPassword);
@@ -141,7 +146,7 @@ export const Login = () => {
 						w="full"
 						bgColor={useColorModeValue("white", "gray.800")}
 					>
-						<form onSubmit={onSubmit}>
+						<form onSubmit={handleSubmit(onSubmit)}>
 							<FormControl mb={8} isRequired>
 								<FormLabel
 									fontSize={"sm"}
@@ -154,10 +159,9 @@ export const Login = () => {
 								</FormLabel>
 								<Input
 									type="text"
-									name="username"
-									onChange={(e) =>
-										setUsername(e.target.value)
-									}
+									{...register("username", {
+										required: true,
+									})}
 								/>
 							</FormControl>
 							<FormControl mb={8} isRequired>
@@ -175,10 +179,9 @@ export const Login = () => {
 										type={
 											viewPassword ? "text" : "password"
 										}
-										name="password"
-										onChange={(e) =>
-											setPassword(e.target.value)
-										}
+										{...register("password", {
+											required: true,
+										})}
 									/>
 									<InputRightElement>
 										<Icon

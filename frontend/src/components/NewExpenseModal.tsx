@@ -5,6 +5,7 @@ import {
 	Flex,
 	FormControl,
 	FormLabel,
+	IconButton,
 	Input,
 	Modal,
 	ModalBody,
@@ -22,38 +23,96 @@ import {
 	Text,
 	useToast,
 } from "@chakra-ui/react";
+import { HiTrash, HiPlus } from "react-icons/hi";
+import {
+	useForm,
+	useFieldArray,
+	SubmitHandler,
+	Control,
+	useWatch,
+	Controller,
+} from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { axiosRequest } from "../utils";
 import { Cookies } from "react-cookie";
+import { axiosRequest } from "../utils";
 
 interface Props {
 	onClose: () => void;
 	isOpen: boolean;
 }
 
-interface SharedExpense {
-	name: string;
+interface ISharedExpense {
+	loaner_id: number;
 	amount: number;
 	status: "P" | "UP";
 }
 
-interface FormData {
+interface IFormData {
 	description: string;
 	amount: number;
 	is_shared: boolean;
-	shared_expenses: SharedExpense[];
+	shared_expenses: ISharedExpense[];
 }
+
+const TotalAmount = ({
+	control,
+	amount,
+}: {
+	control: Control<IFormData>;
+	amount: number;
+}) => {
+	const formData = useWatch({
+		name: "shared_expenses",
+		control,
+	});
+
+	const sharedAmount: number = React.useMemo(() => {
+		const sum = formData.reduce((acc, cur) => acc + (cur.amount || 0), 0);
+		return sum;
+	}, [formData]);
+
+	const yourSplit: number = React.useMemo(() => {
+		return amount - sharedAmount || 0;
+	}, [amount, sharedAmount]);
+
+	return (
+		<Box>
+			<Text fontSize={"sm"} fontWeight={"semibold"} mb={4}>
+				Your Split: {yourSplit}
+			</Text>
+			<Text fontSize="lg" fontWeight={"semibold"}>
+				Final Amount
+			</Text>
+			<Text fontSize="xl" fontWeight={"extrabold"}>
+				{yourSplit + sharedAmount}
+			</Text>
+		</Box>
+	);
+};
 
 export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 	const cookies = new Cookies();
 
 	const toast = useToast();
 	const queryClient = useQueryClient();
-
-	const [isShared, setIsShared] = React.useState(false);
-	const [sharedExpenseData, setSharedExpenseData] = React.useState([]);
-	const [totalAmount, setTotalAmount] = React.useState(0);
-	// const [friends, setFriends] = React.useState([]);
+	const {
+		control,
+		register,
+		handleSubmit,
+		watch,
+		formState: { errors },
+	} = useForm<IFormData>({
+		defaultValues: {
+			description: "",
+			amount: 0,
+			shared_expenses: [],
+		},
+		mode: "onBlur",
+	});
+	const { fields, append, remove } = useFieldArray({
+		control,
+		name: "shared_expenses",
+	});
 
 	const { data, isLoading, error } = useQuery(
 		"friends",
@@ -64,7 +123,7 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 	);
 
 	const mutation = useMutation({
-		mutationFn: (formData: FormData) =>
+		mutationFn: (formData: IFormData) =>
 			axiosRequest.post("/expenses/", formData),
 		onSuccess: () => {
 			queryClient.invalidateQueries("expenses");
@@ -88,44 +147,8 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 		},
 	});
 
-	const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		const formDataElement = new FormData(e.target as HTMLFormElement);
-		let formDataFinal: any = {};
-		let shared_expense: any = [];
-
-		const shared_users = [...formDataElement.getAll("shared_user")];
-		const shared_amounts = [...formDataElement.getAll("shared_amount")];
-
-		shared_users.forEach((user, index) => {
-			// setTotalAmount((prev) => prev + Number(shared_amounts[index]);
-			shared_expense.push({
-				shared_user_id: user,
-				amount: shared_amounts[index],
-				status: "UP",
-			});
-		});
-
-		formDataElement.forEach((value, key) => {
-			if (key !== "shared_user" && key !== "shared_amount")
-				formDataFinal[key] = value;
-		});
-
-		formDataFinal.shared_expenses = shared_expense;
-		formDataFinal.date_time = new Date().toISOString();
-
-		mutation.mutate(formDataFinal);
-	};
-
-	const handleSetIsShared = () => {
-		setIsShared(!isShared);
-	};
-
-	const handleSharedExpense = () => {
-		setSharedExpenseData([
-			...sharedExpenseData,
-			{ name: "", amount: 0, status: "UP" },
-		]);
+	const handleFormSubmit: SubmitHandler<IFormData> = (data) => {
+		mutation.mutate(data);
 	};
 
 	return (
@@ -136,7 +159,7 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 				<ModalCloseButton _focus={{ outline: "none" }} />
 				<ModalBody mb={2}>
 					<form
-						onSubmit={handleFormSubmit}
+						onSubmit={handleSubmit(handleFormSubmit)}
 						encType="multipart/form-data"
 					>
 						<input
@@ -149,98 +172,123 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 								<FormLabel>Description</FormLabel>
 								<Input
 									placeholder="Enter desciption"
-									name="description"
+									{...register("description", {
+										required: true,
+									})}
 								/>
 							</FormControl>
 
-							<FormControl isRequired>
-								<FormLabel>Amount</FormLabel>
-								<NumberInput
-									step={200}
-									defaultValue={0}
-									min={0}
-									onChange={(val) =>
-										setTotalAmount(Number(val))
-									}
-								>
-									<NumberInputField name="amount" />
-									<NumberInputStepper>
-										<NumberIncrementStepper />
-										<NumberDecrementStepper />
-									</NumberInputStepper>
-								</NumberInput>
-							</FormControl>
+							<Controller
+								control={control}
+								name="amount"
+								render={({ field }) => (
+									<FormControl isRequired>
+										<FormLabel>Amount</FormLabel>
+										<NumberInput
+											{...field}
+											onChange={(val) =>
+												field.onChange(parseFloat(val))
+											}
+											step={200}
+											defaultValue={0}
+											min={0}
+										>
+											<NumberInputField />
+											<NumberInputStepper>
+												<NumberIncrementStepper />
+												<NumberDecrementStepper />
+											</NumberInputStepper>
+										</NumberInput>
+									</FormControl>
+								)}
+							/>
 
-							<FormControl display="flex" alignItems="center">
-								<FormLabel htmlFor="shared-expense" mb="0">
-									Shared Expense?
-								</FormLabel>
-								<Switch
-									id="shared-expense"
-									name="is_shared"
-									onChange={handleSetIsShared}
-									value={isShared ? "true" : "false"}
-								/>
-							</FormControl>
-							{isShared ? (
-								<FormControl isRequired>
-									<FormLabel>With</FormLabel>
-									{sharedExpenseData.map((item, index) => (
-										<Flex gap="4" mb="4" key={index}>
-											<Select name="shared_user">
-												{data.map((item, index) => (
-													<option
-														value={item.id}
-														key={index}
-													>
-														{`${item.first_name} ${item.last_name}`}
-													</option>
-												))}
-											</Select>
+							{fields.map((field, index) => (
+								<Flex gap="4" mb="4" key={field.id}>
+									<Select
+										required={true}
+										{...register(
+											`shared_expenses.${index}.loaner_id` as const,
+											{
+												required: true,
+												valueAsNumber: true,
+											}
+										)}
+										defaultValue={field.loaner_id}
+									>
+										<option
+											defaultValue={"-"}
+											defaultChecked={true}
+										>
+											-
+										</option>
+										{data.map((item, index) => (
+											<option
+												value={item.friend.id}
+												key={index}
+											>
+												{item.friend.full_name}
+											</option>
+										))}
+									</Select>
+									<Controller
+										control={control}
+										name={
+											`shared_expenses.${index}.amount` as const
+										}
+										render={({ field }) => (
 											<NumberInput
 												step={100}
 												defaultValue={0}
 												min={0}
+												{...field}
+												onChange={(val) =>
+													field.onChange(
+														parseFloat(val)
+													)
+												}
 											>
 												<NumberInputField
-													name={"shared_amount"}
+													required={true}
 												/>
 												<NumberInputStepper>
 													<NumberIncrementStepper />
 													<NumberDecrementStepper />
 												</NumberInputStepper>
 											</NumberInput>
-										</Flex>
-									))}
-									<Flex>
-										<Button
-											w={"full"}
-											variant="ghost"
-											colorScheme={"blue"}
-											mt="4"
-											onClick={handleSharedExpense}
-										>
-											Add new
-										</Button>
-									</Flex>
-								</FormControl>
-							) : (
-								""
-							)}
+										)}
+									/>
+									<IconButton
+										aria-label="Delete"
+										icon={<HiTrash />}
+										onClick={() => remove(index)}
+									/>
+								</Flex>
+							))}
+							<Button
+								leftIcon={<HiPlus />}
+								onClick={() =>
+									append({
+										loaner_id: 0,
+										amount: 0,
+										status: "UP",
+									})
+								}
+							>
+								Add Split
+							</Button>
 
 							<Flex
 								justifyContent={"space-between"}
 								alignItems="center"
 							>
-								<Box>
-									<Text fontSize="md" fontWeight={"medium"}>
-										Final Amount
-									</Text>
-									<Text fontSize="lg" fontWeight={"bold"}>
-										{totalAmount}
-									</Text>
-								</Box>
+								<TotalAmount
+									control={control}
+									amount={watch("amount")}
+								/>
 								<Button
+									alignSelf={"flex-end"}
+									mb={1}
 									colorScheme={"telegram"}
 									type="submit"
 									isLoading={mutation.isLoading}

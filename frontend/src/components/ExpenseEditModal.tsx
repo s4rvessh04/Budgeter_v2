@@ -32,39 +32,82 @@ import {
 	Icon,
 	Grid,
 	GridItem,
+	IconButton,
 } from "@chakra-ui/react";
 import { FiChevronDown, FiUser, FiUsers } from "react-icons/fi";
 import { axiosRequest, parseDate } from "../utils";
-import { IExpense, ISharedExpense } from "../types";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient, useQuery } from "react-query";
+import {
+	Control,
+	Controller,
+	SubmitHandler,
+	useFieldArray,
+	useForm,
+	useWatch,
+} from "react-hook-form";
+import { Cookies } from "react-cookie";
+import { HiPlus, HiTrash } from "react-icons/hi";
 
 interface Props {
 	onClose: () => void;
 	isOpen: boolean;
-	data: IExpense | undefined;
+	data: any;
 }
 
+const TotalAmount = ({
+	control,
+	amount,
+}: {
+	control: Control<IFormData>;
+	amount: number;
+}) => {
+	const formData = useWatch({
+		name: "shared_expenses",
+		control,
+	});
+
+	const sharedAmount: number = React.useMemo(() => {
+		const sum: number = formData.reduce(
+			(acc: string, cur: string) =>
+				parseFloat(acc) + (parseFloat(cur.amount) || 0),
+			0
+		);
+		return sum;
+	}, [formData]);
+
+	const yourSplit: number = React.useMemo(() => {
+		return amount - sharedAmount || 0;
+	}, [amount, sharedAmount]);
+
+	return (
+		<Box>
+			<Text fontSize={"sm"} fontWeight={"semibold"} mb={4}>
+				Your Split: {yourSplit}
+			</Text>
+			<Text fontSize="lg" fontWeight={"semibold"}>
+				Final Amount
+			</Text>
+			<Text fontSize="xl" fontWeight={"extrabold"}>
+				{yourSplit + sharedAmount}
+			</Text>
+		</Box>
+	);
+};
+
 export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
+	const cookies = new Cookies();
 	const toast = useToast();
 	const queryClient = useQueryClient();
-	const dateTime = parseDate(data!?.date_time);
+	const dateTime = parseDate(data!?.create_dt);
 
-	const [sharedExpenses, setSharedExpenses] = React.useState(
-		data!?.shared_expenses
-	);
-
-	React.useEffect(() => {
-		setSharedExpenses(data!?.shared_expenses);
-		console.log(data);
-		return;
-	}, [data]);
-
-	const mutation = useMutation({
-		mutationFn: () => axiosRequest.delete(`/expenses/${data!.id}/delete`),
+	const deleteExpenseMutation = useMutation({
+		mutationFn: (expneseId: number) =>
+			axiosRequest.delete(`/expenses/${expneseId}/delete`),
 		onSuccess: () => {
 			queryClient.invalidateQueries("expenses");
 			toast({
-				title: "Expense deleted.",
+				title: "Deleted!",
+				description: "Expense deleted successfully.",
 				status: "success",
 				duration: 3000,
 				isClosable: true,
@@ -73,7 +116,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 		},
 		onError: (err: any) => {
 			toast({
-				title: "Expense could not be deleted.",
+				title: "Error!",
 				description: err?.response?.data?.message,
 				status: "error",
 				duration: 3000,
@@ -82,132 +125,140 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 		},
 	});
 
-	const handleDeleteExpense = () => {
-		mutation.mutate();
+	const deleteSharedExpenseMutation = useMutation({
+		mutationFn: (sharedExpenseId: number) =>
+			axiosRequest.delete(`/expenses/shared/${sharedExpenseId}/delete`),
+		onSuccess: () => {
+			queryClient.invalidateQueries("expenses");
+			toast({
+				title: "Removed!",
+				description: "Removed successfully.",
+				status: "success",
+				duration: 3000,
+				isClosable: true,
+			});
+		},
+		onError: (err: any) => {
+			toast({
+				title: "Error!",
+				description: err?.response?.data?.message,
+				status: "error",
+				duration: 3000,
+				isClosable: true,
+			});
+		},
+	});
+
+	const {
+		data: friendsList,
+		isLoading,
+		error,
+	} = useQuery(
+		"friends",
+		() => axiosRequest.get("/friends/").then((res) => res.data),
+		{
+			refetchOnWindowFocus: false,
+		}
+	);
+
+	const handleExpenseDeleteMutation = (expenseId: number) => {
+		deleteExpenseMutation.mutate(expenseId);
+	};
+	const handleSharedExpenseDeleteMutation = (sharedExpenseId: number) => {
+		deleteSharedExpenseMutation.mutate(sharedExpenseId);
 	};
 
-	function handleSharedExpUserCount(type: "inc" | "dec"): void {
-		if (type === "inc") {
-			setSharedExpenses([
-				...sharedExpenses,
-				{
-					id: "0",
-					expense_id: "0",
-					last_update: "0",
-					main_user_id: "0",
-					shared_user_amount: 0,
-					shared_user_id: "0",
-					status: "UP",
-				},
-			]);
-		} else {
-			sharedExpenses.pop();
-			setSharedExpenses([...sharedExpenses]);
-		}
-	}
+	const {
+		control,
+		register,
+		handleSubmit,
+		watch,
+		reset,
+		setValue,
+		formState: { errors },
+	} = useForm<IFormData>({
+		defaultValues: { ...data },
+		mode: "onBlur",
+	});
+
+	React.useEffect(() => {
+		reset(data);
+	}, [data]);
+
+	const { fields, append, remove, update } = useFieldArray({
+		control,
+		name: "shared_expenses",
+		keyName: "fieldArrID",
+	});
+
+	const updateMutation = useMutation({
+		mutationFn: (formData: IFormData) =>
+			axiosRequest.put(`/expenses/${data.id}/update`, formData),
+		onSuccess: () => {
+			queryClient.invalidateQueries("expenses");
+			toast({
+				title: "Updated!",
+				description: "Expense updated successfully.",
+				status: "success",
+				duration: 2500,
+				isClosable: true,
+			});
+			onClose();
+		},
+		onError: (err: any) => {
+			toast({
+				title: "Error!",
+				description: err.response.data,
+				status: "error",
+				duration: 2500,
+				isClosable: true,
+			});
+		},
+	});
+
+	const handleUpdateFormSubmit: SubmitHandler<IFormData> = (data) => {
+		updateMutation.mutate(data);
+		// console.log(data);
+	};
 
 	return (
 		<>
 			<Modal isOpen={isOpen} onClose={onClose}>
 				<ModalOverlay />
 				<ModalContent>
-					<ModalHeader>Edit Expense</ModalHeader>
+					<ModalHeader>Update Expense</ModalHeader>
 					<ModalCloseButton _focus={{ outline: "none" }} />
-					<ModalBody pb={6}>
-						<Flex justify={"space-between"} alignItems={"center"}>
-							<Box
-								fontWeight={"semibold"}
-								sx={{
-									fontVariantNumeric: "proportional-nums",
-									verticalAlign: "baseline",
-								}}
-							>
-								<Text fontSize={"md"}>{dateTime.date}</Text>
-								<Text
-									fontSize={"sm"}
-									color={useColorModeValue(
-										"gray.500",
-										"gray.400"
-									)}
-									mt={0.5}
-								>
-									{dateTime.time}
-								</Text>
-							</Box>
-							<Box>
-								<Tag
-									size={"md"}
-									variant="subtle"
-									rounded={"full"}
-									colorScheme="telegram"
-								>
-									<TagLeftIcon boxSize="12px">
-										{data?.is_shared ? (
-											<FiUsers size={"24px"} />
-										) : (
-											<FiUser size={"24px"} />
-										)}
-									</TagLeftIcon>
-									<TagLabel>
-										{data?.is_shared ? "Shared" : "Self"}
-									</TagLabel>
-								</Tag>
-							</Box>
-						</Flex>
-						<FormControl mt={4}>
-							<FormLabel>Description</FormLabel>
-							<Input
-								defaultValue={data?.description}
-								placeholder="Enter description"
-								required
+					<ModalBody mb={2}>
+						<form
+							onSubmit={handleSubmit(handleUpdateFormSubmit)}
+							encType="multipart/form-data"
+						>
+							<input
+								type="hidden"
+								name="csrfmiddlewaretoken"
+								value={cookies.get("csrftoken")}
 							/>
-						</FormControl>
-						<FormControl mt={4}>
-							<FormLabel>Amount</FormLabel>
-							<NumberInput value={data?.amount} step={100}>
-								<NumberInputField />
-								<NumberInputStepper>
-									<NumberIncrementStepper />
-									<NumberDecrementStepper />
-								</NumberInputStepper>
-							</NumberInput>
-						</FormControl>
-						{data?.is_shared && sharedExpenses?.length !== 0 ? (
-							<FormControl isRequired mt={4}>
-								<FormLabel>With</FormLabel>
-								{sharedExpenses?.map((sharedExpense, idx) => (
-									<Grid
-										gap="4"
-										mb="4"
-										key={idx}
-										templateColumns={"repeat(6, 1fr)"}
-									>
-										<GridItem
-											colSpan={3}
-											display="flex"
-											alignItems="center"
-											justifyContent={"start"}
-										>
-											<Select
-												defaultValue={
-													sharedExpense.shared_user
-												}
-											>
-												<option>
-													{sharedExpense.shared_user}
-												</option>
-											</Select>
-										</GridItem>
-										<GridItem
-											colSpan={2}
-											display="flex"
-											alignItems="center"
-											justifyContent={"start"}
-										>
+							<Flex direction={"column"} gap="5" rounded={"md"}>
+								<FormControl>
+									<FormLabel>Description</FormLabel>
+									<Input {...register("description", {})} />
+								</FormControl>
+
+								<Controller
+									control={control}
+									name="amount"
+									render={({ field }) => (
+										<FormControl>
+											<FormLabel>Amount</FormLabel>
 											<NumberInput
-												step={100}
+												{...field}
+												onChange={(val) =>
+													field.onChange(
+														parseFloat(val)
+													)
+												}
+												step={200}
 												min={0}
-												value={sharedExpense.amount}
 											>
 												<NumberInputField />
 												<NumberInputStepper>
@@ -215,147 +266,206 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 													<NumberDecrementStepper />
 												</NumberInputStepper>
 											</NumberInput>
-										</GridItem>
-										<GridItem
-											colSpan={1}
-											display="flex"
-											alignItems="center"
-											justifyContent={"end"}
+										</FormControl>
+									)}
+								/>
+
+								{fields.map((field, index) => (
+									<Flex gap="4" mb="4" key={field.fieldArrID}>
+										<Select
+											required={true}
+											{...register(
+												`shared_expenses.${index}.loaner_id` as const,
+												{
+													required: true,
+													valueAsNumber: true,
+												}
+											)}
+											defaultValue={
+												field?.loaner?.loaner_id
+											}
 										>
-											<Menu>
-												<MenuButton
-													p="2"
-													as={Button}
-													color={useColorModeValue(
-														"white",
-														"gray.700"
-													)}
-													_hover={{
-														bg:
-															sharedExpense?.status ===
-															"P"
-																? useColorModeValue(
-																		"green.600",
-																		"green.300"
-																  )
-																: useColorModeValue(
-																		"red.600",
-																		"red.300"
-																  ),
-													}}
-													_active={{
-														bg:
-															sharedExpense?.status ===
-															"UP"
-																? useColorModeValue(
-																		"green.600",
-																		"green.300"
-																  )
-																: useColorModeValue(
-																		"red.600",
-																		"red.300"
-																  ),
-													}}
-													bg={
-														sharedExpense?.status ===
-														"P"
-															? useColorModeValue(
-																	"green.500",
-																	"green.200"
-															  )
-															: useColorModeValue(
-																	"red.500",
-																	"red.200"
-															  )
+											{friendsList!.map((item, index) => (
+												<option
+													value={item.friend.id}
+													key={index}
+												>
+													{item.friend.full_name}
+												</option>
+											))}
+										</Select>
+										<Controller
+											control={control}
+											name={
+												`shared_expenses.${index}.amount` as const
+											}
+											render={({ field }) => (
+												<NumberInput
+													step={100}
+													defaultValue={0}
+													min={0}
+													{...field}
+													onChange={(val) =>
+														field.onChange(
+															parseFloat(val)
+														)
 													}
 												>
-													<Icon
-														as={FiChevronDown}
-														size="4"
-														boxSize={"4"}
-														mt="1"
+													<NumberInputField
+														required={true}
 													/>
-												</MenuButton>
-												<MenuList px="2">
-													<MenuItem
-														rounded={"md"}
-														border="none"
-														_hover={{
-															border: "none",
-														}}
-													>
-														Mark{" "}
-														{sharedExpense?.status ===
-														"P"
-															? "Unpaid"
-															: "Paid"}
-													</MenuItem>
-													<MenuItem
-														color={useColorModeValue(
-															"red.600",
-															"red.300"
-														)}
-														rounded={"md"}
-														border="none"
-														_hover={{
-															border: "none",
-														}}
-														onClick={() =>
-															handleSharedExpUserCount(
-																"dec"
-															)
-														}
-													>
-														Remove
-													</MenuItem>
-												</MenuList>
-											</Menu>
-										</GridItem>
-									</Grid>
+													<NumberInputStepper>
+														<NumberIncrementStepper />
+														<NumberDecrementStepper />
+													</NumberInputStepper>
+												</NumberInput>
+											)}
+										/>
+										<Menu>
+											<MenuButton
+												p="2"
+												as={Button}
+												color={useColorModeValue(
+													"white",
+													"gray.700"
+												)}
+												_hover={{
+													bg:
+														field.status === "P"
+															? useColorModeValue(
+																	"green.600",
+																	"green.300"
+															  )
+															: useColorModeValue(
+																	"red.600",
+																	"red.300"
+															  ),
+												}}
+												_active={{
+													bg:
+														field.status === "P"
+															? useColorModeValue(
+																	"green.600",
+																	"green.300"
+															  )
+															: useColorModeValue(
+																	"red.600",
+																	"red.300"
+															  ),
+												}}
+												bg={
+													field.status === "P"
+														? useColorModeValue(
+																"green.500first",
+																"green.200"
+														  )
+														: useColorModeValue(
+																"red.500",
+																"red.200"
+														  )
+												}
+											>
+												<Icon
+													as={FiChevronDown}
+													size="4"
+													boxSize={"4"}
+													mt="1"
+												/>
+											</MenuButton>
+											<MenuList px="2">
+												<MenuItem
+													rounded={"md"}
+													border="none"
+													_hover={{
+														border: "none",
+													}}
+													onClick={() =>
+														update(index, {
+															...field,
+															status:
+																field.status ===
+																"P"
+																	? "UP"
+																	: "P",
+														})
+													}
+												>
+													Mark{" "}
+													{field.status === "P"
+														? "Unpaid"
+														: "Paid"}
+												</MenuItem>
+												<MenuItem
+													color={useColorModeValue(
+														"red.600",
+														"red.300"
+													)}
+													rounded={"md"}
+													border="none"
+													_hover={{
+														border: "none",
+													}}
+													onClick={() => {
+														handleSharedExpenseDeleteMutation(
+															parseInt(field.id)
+														);
+														remove(index);
+													}}
+												>
+													Remove
+												</MenuItem>
+											</MenuList>
+										</Menu>
+									</Flex>
 								))}
-								<Flex>
-									<Button
-										w={"full"}
-										variant="ghost"
-										colorScheme={"blue"}
-										onClick={() =>
-											handleSharedExpUserCount("inc")
-										}
-									>
-										Add new
-									</Button>
+								<Button
+									leftIcon={<HiPlus />}
+									onClick={() =>
+										append({
+											loaner_id: 0,
+											amount: 0,
+											status: "UP",
+										})
+									}
+								>
+									Add Split
+								</Button>
+								<Flex
+									justifyContent={"space-between"}
+									alignItems={"center"}
+								>
+									<TotalAmount
+										control={control}
+										amount={watch("amount")}
+									/>
+									<Flex alignSelf={"flex-end"} mb={1}>
+										<Button
+											colorScheme={"red"}
+											variant="ghost"
+											mr="3"
+											isLoading={
+												deleteExpenseMutation.isLoading
+											}
+											onClick={() =>
+												handleExpenseDeleteMutation(
+													data?.id
+												)
+											}
+										>
+											Delete
+										</Button>{" "}
+										<Button
+											colorScheme={"telegram"}
+											type="submit"
+											isLoading={updateMutation.isLoading}
+										>
+											Save
+										</Button>
+									</Flex>
 								</Flex>
-							</FormControl>
-						) : (
-							""
-						)}
+							</Flex>
+						</form>
 					</ModalBody>
-
-					<ModalFooter>
-						<Button
-							colorScheme={"red"}
-							variant="ghost"
-							mr="3"
-							isLoading={mutation.isLoading}
-							onClick={handleDeleteExpense}
-						>
-							Delete
-						</Button>
-						<Button
-							colorScheme="telegram"
-							mr={3}
-							onClick={() =>
-								toast({
-									title: `Saved successfully`,
-									position: "bottom",
-									isClosable: true,
-									status: "success",
-								}) && onClose()
-							}
-						>
-							Save
-						</Button>
-					</ModalFooter>
 				</ModalContent>
 			</Modal>
 		</>
