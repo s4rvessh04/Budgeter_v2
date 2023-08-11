@@ -1,12 +1,13 @@
 import { IconButton, IconButtonProps, useColorMode } from "@chakra-ui/react";
-import { FiMoon, FiSun } from "react-icons/fi";
+import { HiMoon, HiSun } from "react-icons/hi";
 
 export const ThemeToggler = (props: IconButtonProps) => {
 	const { colorMode, toggleColorMode } = useColorMode();
 	return (
 		<IconButton
 			onClick={toggleColorMode}
-			icon={colorMode === "dark" ? <FiSun /> : <FiMoon />}
+			fontSize={"20"}
+			icon={colorMode === "dark" ? <HiSun /> : <HiMoon />}
 			_focus={{ outline: "none" }}
 			{...props}
 		/>
