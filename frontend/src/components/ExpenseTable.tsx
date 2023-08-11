@@ -120,7 +120,7 @@ export const ExpenseTable = () => {
 
 	return (
 		<>
-			<TableContainer h={"full"} overflowY={"auto"}>
+			<TableContainer h={"full"} overflowY={"scroll"}>
 				<Table variant="simple" h={"full"}>
 					<Thead
 						pos={"sticky"}
@@ -144,7 +144,7 @@ export const ExpenseTable = () => {
 					</Thead>
 					{!isLoading ? (
 						data!?.length > 0 ? (
-							<Tbody>
+							<Tbody h="full">
 								{data?.map((expense: any, idx: number) => (
 									<Tr
 										key={idx}
