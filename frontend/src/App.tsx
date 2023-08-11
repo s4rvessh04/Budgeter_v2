@@ -5,11 +5,11 @@ import {
 	Home,
 	Error,
 	Friends,
-	NewExpense,
-	Expenses,
+	FriendsDiscover,
 	Login,
 	Signup,
 	Landing,
+	Settings,
 } from "./pages";
 import { useAuthStore } from "./stores";
 
@@ -30,14 +30,14 @@ function App() {
 			<ProtectedRoute path="/home">
 				<Home />
 			</ProtectedRoute>
-			<ProtectedRoute path="/new">
-				<NewExpense />
-			</ProtectedRoute>
-			<ProtectedRoute path="/expenses">
-				<Expenses />
-			</ProtectedRoute>
 			<ProtectedRoute path="/friends">
 				<Friends />
+			</ProtectedRoute>
+			<ProtectedRoute path="/discover">
+				<FriendsDiscover />
+			</ProtectedRoute>
+			<ProtectedRoute path="/settings">
+				<Settings />
 			</ProtectedRoute>
 			<Route component={Error} />
 		</Switch>

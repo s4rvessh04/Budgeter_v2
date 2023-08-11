@@ -18,16 +18,14 @@ import {
 	Image,
 } from "@chakra-ui/react";
 import {
-	FiHome,
-	FiUsers,
-	FiSettings,
 	FiMenu,
 	FiPlus,
 	FiTool,
 	FiLogOut,
 	FiBell,
-	FiDollarSign,
+	FiCompass,
 } from "react-icons/fi";
+import { RiCompassDiscoverFill } from "react-icons/ri";
 import { IconType } from "react-icons";
 import {
 	NotificationsModal,
@@ -39,6 +37,15 @@ import { useMutation } from "react-query";
 import { axiosLogout } from "../utils";
 
 import viteSvg from "../../public/vite.svg";
+import {
+	HiBell,
+	HiCog,
+	HiHome,
+	HiLogout,
+	HiPlus,
+	HiPlusCircle,
+	HiUsers,
+} from "react-icons/hi";
 
 interface LinkItemProps {
 	name: string;
@@ -47,10 +54,10 @@ interface LinkItemProps {
 }
 
 const LinkItems: Array<LinkItemProps> = [
-	{ name: "Home", path: "/home", icon: FiHome },
-	{ name: "Friends", path: "/friends", icon: FiUsers },
-	{ name: "Expenses", path: "/expenses", icon: FiDollarSign },
-	{ name: "Settings", path: "/settings", icon: FiSettings },
+	{ name: "Home", path: "/home", icon: HiHome },
+	{ name: "Friends", path: "/friends", icon: HiUsers },
+	{ name: "Discover", path: "/discover", icon: RiCompassDiscoverFill },
+	{ name: "Settings", path: "/settings", icon: HiCog },
 ];
 
 export function Navbar({ children }: { children: ReactNode }) {
@@ -155,6 +162,7 @@ const NavLink = ({ icon, path, children, ...rest }: NavItemProps) => {
 				mb="2"
 				borderRadius="lg"
 				role="group"
+				fontWeight={isActive ? "bold" : "medium"}
 				cursor="pointer"
 				_hover={{
 					bg: useColorModeValue("gray.900", "gray.700"),
@@ -164,8 +172,8 @@ const NavLink = ({ icon, path, children, ...rest }: NavItemProps) => {
 			>
 				{icon && (
 					<Icon
-						mr="4"
-						fontSize="16"
+						mr="3"
+						fontSize="20"
 						_groupHover={{
 							color: "white",
 						}}
@@ -240,6 +248,7 @@ const SidebarContent = ({
 							mx="4"
 							mb="2"
 							borderRadius="lg"
+							fontWeight={"semibold"}
 							role="group"
 							cursor="pointer"
 							_hover={{
@@ -252,12 +261,12 @@ const SidebarContent = ({
 							onClick={() => newExpenseModal.onOpen()}
 						>
 							<Icon
-								mr="4"
-								fontSize="16"
+								mr="3"
+								fontSize="20"
 								_groupHover={{
 									color: "white",
 								}}
-								as={FiPlus}
+								as={HiPlusCircle}
 							/>
 							Add Expense
 						</Flex>
@@ -281,21 +290,17 @@ const SidebarContent = ({
 						<ThemeToggler w={"full"} aria-label="Theme toggler" />
 						<IconButton
 							aria-label="notification-btn"
-							icon={<FiBell />}
+							icon={<HiBell />}
+							fontSize={"20"}
 							w={"full"}
 							onClick={() => notificationsModal.onOpen()}
 						/>
 						<IconButton
-							aria-label="notification-btn"
-							icon={<FiTool />}
-							w={"full"}
-							onClick={() => quickSettingsModal.onOpen()}
-						/>
-						<IconButton
 							isLoading={logoutLoading}
 							w={"full"}
+							fontSize={"20"}
 							aria-label="log-out-btn"
-							icon={<FiLogOut />}
+							icon={<HiLogout />}
 							colorScheme="red"
 							onClick={handleLogout}
 						/>
