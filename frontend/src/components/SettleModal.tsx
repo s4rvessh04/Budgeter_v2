@@ -19,21 +19,39 @@ import {
 import { parseAmount, parseDate } from "../utils";
 import { IExpenseList } from "../types/modals.component.types";
 import { FiAlertCircle, FiCheckCircle } from "react-icons/fi";
+import { useSettleExpenseStore } from "../stores";
 import React from "react";
+import shallow from "zustand/shallow";
 
 interface Props {
 	onClose: () => void;
 	isOpen: boolean;
-	data?: IExpenseList;
+	data?: any;
 }
 
 export const SettleModal = ({ onClose, isOpen, data }: Props) => {
 	const TOAST = useToast();
-	const TOTAL_AMOUNT = parseAmount(data!?.totalAmount);
 
 	const [selectedExpenses, setSelectedExpenses] = React.useState<Number[]>(
 		[]
 	);
+	const [settleData, setSettleData] = React.useState();
+
+	React.useEffect(() => {
+		if (data) {
+			setSettleData(data);
+		}
+		return;
+	}, [data]);
+
+	const totalAmount = React.useMemo(() => {
+		return data?.expenses?.reduce(
+			(prev, curr) =>
+				parseFloat(prev) +
+				parseFloat(curr.status === "UP" ? curr.amount : 0),
+			0
+		);
+	}, [data]);
 
 	function handleSelectExpense(idx: Number) {
 		if (selectedExpenses.includes(idx)) {
@@ -58,15 +76,15 @@ export const SettleModal = ({ onClose, isOpen, data }: Props) => {
 			<ModalContent bg={useColorModeValue("white", "gray.800")}>
 				<ModalHeader>
 					<Text fontWeight={"semibold"} fontSize="xl">
-						{data?.name}
+						{data?.loaner!?.full_name}
 					</Text>
 					<Text fontWeight={"semibold"} fontSize="lg">
-						{TOTAL_AMOUNT}
+						{parseAmount(totalAmount)}
 					</Text>
 				</ModalHeader>
 				<ModalCloseButton _focus={{ outline: "none" }} />
 				<ModalBody mb={2} px="2">
-					{data?.expenses.map((expense, idx) => (
+					{data?.expenses?.map((expense, idx) => (
 						<Box
 							key={idx}
 							onClick={() => handleSelectExpense(idx)}
@@ -83,15 +101,20 @@ export const SettleModal = ({ onClose, isOpen, data }: Props) => {
 							mb="2"
 						>
 							<Text
-								fontWeight="medium"
+								fontWeight="normal"
 								fontSize={"sm"}
+								textColor={useColorModeValue(
+									"gray.600",
+									"gray.400"
+								)}
 								textTransform={"capitalize"}
 								mb={1}
+								// fontFamily={"monospace"}
 							>
-								{parseDate(expense?.dateTime).date}
+								{parseDate(expense?.create_dt).date}
 							</Text>
 							<Text fontWeight={"medium"}>
-								{expense?.description}
+								{expense?.expense.description}
 							</Text>
 							<Flex
 								display={"flex"}
@@ -102,25 +125,22 @@ export const SettleModal = ({ onClose, isOpen, data }: Props) => {
 								<Text fontSize={"lg"} fontWeight="semibold">
 									₹{expense?.amount}
 								</Text>
-								{selectedExpenses.includes(idx) ? (
-									<Tag
-										rounded={"full"}
-										variant="subtle"
-										colorScheme={"green"}
-									>
-										<TagLeftIcon as={FiCheckCircle} />
-										<TagLabel>Paid</TagLabel>
-									</Tag>
-								) : (
-									<Tag
-										rounded={"full"}
-										variant="subtle"
-										colorScheme={"red"}
-									>
-										<TagLeftIcon as={FiAlertCircle} />
-										<TagLabel>Unpaid</TagLabel>
-									</Tag>
-								)}
+								<Tag
+									rounded={"full"}
+									variant="subtle"
+									colorScheme={
+										expense?.status === "UP"
+											? "red"
+											: "green"
+									}
+								>
+									<TagLeftIcon as={FiAlertCircle} />
+									<TagLabel>
+										{expense?.status === "UP"
+											? "Unpaid"
+											: "Paid"}
+									</TagLabel>
+								</Tag>
 							</Flex>
 						</Box>
 					))}

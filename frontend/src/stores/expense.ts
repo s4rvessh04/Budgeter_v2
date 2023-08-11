@@ -8,11 +8,15 @@ interface ExpenseState {
 interface OweExpenseState {
 	sumOweExpensesAmount: number;
 	updateSumOweExpensesAmount: (value: number) => void;
+	addSumOweExpensesAmount: (value: number) => void;
+	resetSumOweExpensesAmount: () => void;
 }
 
 interface SettleExpenseState {
 	sumSettleExpensesAmount: number;
 	updateSumSettleExpensesAmount: (value: number) => void;
+	addSumSettleExpensesAmount: (value: number) => void;
+	resetSumSettleExpensesAmount: () => void;
 }
 
 interface BalanceState {
@@ -33,14 +37,25 @@ export const useExpenseStore = create<ExpenseState>()((set) => ({
 
 export const useOweExpenseStore = create<OweExpenseState>()((set) => ({
 	sumOweExpensesAmount: 0,
+	addSumOweExpensesAmount: (value: number) =>
+		set((state) => ({
+			sumOweExpensesAmount: state.sumOweExpensesAmount + value,
+		})),
 	updateSumOweExpensesAmount: (value: number) =>
 		set(() => ({ sumOweExpensesAmount: value })),
+	resetSumOweExpensesAmount: () => set(() => ({ sumOweExpensesAmount: 0 })),
 }));
 
 export const useSettleExpenseStore = create<SettleExpenseState>()((set) => ({
 	sumSettleExpensesAmount: 0,
+	addSumSettleExpensesAmount: (value: number) =>
+		set((state) => ({
+			sumSettleExpensesAmount: state.sumSettleExpensesAmount + value,
+		})),
 	updateSumSettleExpensesAmount: (value: number) =>
 		set(() => ({ sumSettleExpensesAmount: value })),
+	resetSumSettleExpensesAmount: () =>
+		set(() => ({ sumSettleExpensesAmount: 0 })),
 }));
 
 export const useBalanceStore = create<BalanceState>()((set) => ({

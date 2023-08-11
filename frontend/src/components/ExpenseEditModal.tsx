@@ -177,13 +177,9 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 		setValue,
 		formState: { errors },
 	} = useForm<IFormData>({
-		defaultValues: { ...data },
+		values: { ...data },
 		mode: "onBlur",
 	});
-
-	React.useEffect(() => {
-		reset(data);
-	}, [data]);
 
 	const { fields, append, remove, update } = useFieldArray({
 		control,

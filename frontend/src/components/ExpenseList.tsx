@@ -1,7 +1,6 @@
 import React from "react";
 import {
 	Box,
-	color,
 	Flex,
 	Grid,
 	GridItem,
@@ -13,15 +12,14 @@ import {
 	useColorMode,
 	useDisclosure,
 } from "@chakra-ui/react";
-import axios from "axios";
 import shallow from "zustand/shallow";
 import { faker } from "@faker-js/faker";
 import { useQuery } from "react-query";
 
 import { OweModal, SettleModal } from "../components";
-import { IExpenseList } from "../types/modals.component.types";
 
 import { handleColorModeValue, parseAmount } from "../utils";
+import { axiosRequest } from "../utils/axiosInstance";
 import { useOweExpenseStore, useSettleExpenseStore } from "../stores";
 
 export const ExpenseList = () => {
@@ -30,130 +28,207 @@ export const ExpenseList = () => {
 	const oweExpensesModalDisclosure = useDisclosure();
 	const settleExpensesModalDisclosure = useDisclosure();
 
-	const [modalData, setModalData] = React.useState<IExpenseList>();
-	const [oweExpenses, setOweExpenses] = React.useState<IExpenseList[]>();
-	const [sumOweExpenseAmount, updateSumOweExpenseAmount] = useOweExpenseStore(
+	const [selectedOweExpense, setSelectedOweExpense] = React.useState();
+	const [selectedSettleExpense, setSelectedSettleExpense] = React.useState();
+
+	const [
+		sumOweExpenseAmount,
+		updateSumOweExpenseAmount,
+		addSumOweExpensesAmount,
+		resetSumOweExpensesAmount,
+	] = useOweExpenseStore(
 		(state) => [
 			state.sumOweExpensesAmount,
 			state.updateSumOweExpensesAmount,
+			state.addSumOweExpensesAmount,
+			state.resetSumOweExpensesAmount,
 		],
 		shallow
 	);
-	const [settleExpenses, setSettleExpenses] =
-		React.useState<IExpenseList[]>();
-	const [sumSettleExpensesAmount, updateSumSettleExpensesAmount] =
-		useSettleExpenseStore(
-			(state) => [
-				state.sumSettleExpensesAmount,
-				state.updateSumSettleExpensesAmount,
-			],
-			shallow
-		);
 
-	const { isLoading, error, data, isFetching } = useQuery(["owe-due"], () => {
-		const data = axios
-			.get("https://jsonplaceholder.typicode.com/todos/2")
-			.then((res) => res.data);
-		return data;
+	const [
+		sumSettleExpensesAmount,
+		updateSumSettleExpenseAmount,
+		addSumSettleExpensesAmount,
+		resetSumSettleExpensesAmount,
+	] = useSettleExpenseStore(
+		(state) => [
+			state.sumSettleExpensesAmount,
+			state.updateSumSettleExpensesAmount,
+			state.addSumSettleExpensesAmount,
+			state.resetSumSettleExpensesAmount,
+		],
+		shallow
+	);
+
+	const { data: oweExpensesData, isLoading: oweExpensesLoading } = useQuery({
+		queryKey: "oweExpenses",
+		queryFn: () =>
+			axiosRequest.get("/expenses/shared/owe/").then((res) => res.data),
+		onSuccess: (data) => {
+			resetSumOweExpensesAmount();
+			console.log("owe", data);
+		},
 	});
 
-	const expensesSum = React.useCallback(
-		(expenses: IExpenseList[]) => {
-			let sum = 0;
+	const { data: settleExpensesData, isLoading: settleExpensesLoading } =
+		useQuery({
+			queryKey: "sharedExpenses",
+			queryFn: () =>
+				axiosRequest.get("/expenses/shared/").then((res) => res.data),
+			onSuccess: (data) => {
+				resetSumSettleExpensesAmount();
+				console.log("shared", data);
+			},
+		});
 
-			expenses.forEach((item) => {
-				let expensesSum: number = parseFloat(
-					item.expenses
-						.reduce((prev, curr) => prev + curr.amount, 0)
-						.toFixed(2)
-				);
+	// const createOweExpenses = React.useCallback(updateSumSettleExpensesAmount(totalAmount);
+	// 	(count: number): IExpenseList[] => {
+	// 		let items: IExpenseList[] = [];
 
-				item.totalAmount = expensesSum;
-				sum += expensesSum;
-			});
+	// 		for (let i = 0; i < count; i++) {
+	// 			let expenses = [];
 
-			return parseFloat(sum.toFixed(2));
-		},
-		[oweExpenses, settleExpenses]
-	);
+	// 			for (let j = 0; j < parseInt(faker.random.numeric(1)); j++) {
+	// 				let id = faker.database.mongodbObjectId();
+	// 				let dateTime = faker.date.past().toUTCString();
+	// 				let description = faker.finance.transactionDescription();
+	// 				let amount = parseFloat(faker.finance.amount());
 
-	const createOweExpenses = React.useCallback(
-		(count: number): IExpenseList[] => {
-			let items: IExpenseList[] = [];
+	// 				expenses.push({
+	// 					id: id,
+	// 					dateTime: dateTime,
+	// 					description: description,
+	// 					amount: amount,
+	// 				});
+	// 			}
 
-			for (let i = 0; i < count; i++) {
-				let expenses = [];
+	// 			items.push({
+	// 				id: faker.database.mongodbObjectId(),
+	// 				name: faker.name.fullName(),
+	// 				totalAmount: parseFloat(faker.finance.amount()),
+	// 				expenses: expenses,
+	// 			});
+	// 		}
+	// 		return items;
+	// 	},
+	// 	[]
+	// );
 
-				for (let j = 0; j < parseInt(faker.random.numeric(1)); j++) {
-					let id = faker.database.mongodbObjectId();
-					let dateTime = faker.date.past().toUTCString();
-					let description = faker.finance.transactionDescription();
-					let amount = parseFloat(faker.finance.amount());
+	// const createSettleExpenses = React.useCallback((count: number) => {
+	// 	let items: IExpenseList[] = [];
 
-					expenses.push({
-						id: id,
-						dateTime: dateTime,
-						description: description,
-						amount: amount,
-					});
-				}
+	// 	for (let i = 0; i < count; i++) {
+	// 		let expenses = [];
 
-				items.push({
-					id: faker.database.mongodbObjectId(),
-					name: faker.name.fullName(),
-					totalAmount: parseFloat(faker.finance.amount()),
-					expenses: expenses,
-				});
-			}
-			return items;
-		},
-		[]
-	);
+	// 		for (let j = 0; j < parseInt(faker.random.numeric(1)); j++) {
+	// 			expenses.push({
+	// 				id: faker.database.mongodbObjectId(),
+	// 				dateTime: faker.date.past().toUTCString(),
+	// 				description: faker.finance.transactionDescription(),
+	// 				amount: parseFloat(faker.finance.amount()),
+	// 			});
+	// 		}
 
-	const createSettleExpenses = React.useCallback((count: number) => {
-		let items: IExpenseList[] = [];
+	// 		items.push({
+	// 			id: faker.database.mongodbObjectId(),
+	// 			name: faker.name.fullName(),
+	// 			totalAmount: parseFloat(faker.finance.amount()),
+	// 			expenses: expenses,
+	// 		});
+	// 	}
+	// 	return items;
+	// }, []);
 
-		for (let i = 0; i < count; i++) {
-			let expenses = [];
+	// React.useEffect(() => {
+	// 	const settleExpenses = createSettleExpenses(10);
+	// 	const oweExpenses = createOweExpenses(10);
+	// 	setSettleExpenses(settleExpenses);
+	// 	setOweExpenses(oweExpenses);
+	// 	updateSumOweExpenseAmount(expensesSum(oweExpenses));
+	// 	updateSumSettleExpensesAmount(expensesSum(settleExpenses));
+	// 	return;
+	// }, []);
 
-			for (let j = 0; j < parseInt(faker.random.numeric(1)); j++) {
-				expenses.push({
-					id: faker.database.mongodbObjectId(),
-					dateTime: faker.date.past().toUTCString(),
-					description: faker.finance.transactionDescription(),
-					amount: parseFloat(faker.finance.amount()),
-				});
-			}
+	// function handleOweModal(data: any) {
+	// 	setModalData(data);
+	// 	return oweExpensesModalDisclosure.onOpen();
+	// }
 
-			items.push({
-				id: faker.database.mongodbObjectId(),
-				name: faker.name.fullName(),
-				totalAmount: parseFloat(faker.finance.amount()),
-				expenses: expenses,
-			});
-		}
-		return items;
-	}, []);
+	// function handleSettleModal(data: any) {
+	// 	setModalData(data);
+	// 	return settleExpensesModalDisclosure.onOpen();
+	// }
 
-	React.useEffect(() => {
-		const settleExpenses = createSettleExpenses(10);
-		const oweExpenses = createOweExpenses(10);
-		setSettleExpenses(settleExpenses);
-		setOweExpenses(oweExpenses);
-		updateSumOweExpenseAmount(expensesSum(oweExpenses));
-		updateSumSettleExpensesAmount(expensesSum(settleExpenses));
-		return;
-	}, []);
+	const handleSumSettleExpenses = () => {
+		let individualSum = {};
+		let sum = 0;
 
-	function handleOweModal(data: any) {
-		setModalData(data);
-		return oweExpensesModalDisclosure.onOpen();
-	}
+		settleExpensesData?.forEach((item) => {
+			const personTotal = item.expenses.reduce(
+				(prev, curr) =>
+					parseFloat(prev) +
+					parseFloat(curr.status === "UP" ? curr.amount : 0),
+				0
+			);
+			individualSum[item?.loaner?.full_name] = personTotal;
+			sum += personTotal;
+		});
 
-	function handleSettleModal(data: any) {
-		setModalData(data);
-		return settleExpensesModalDisclosure.onOpen();
-	}
+		const handleIndividualSum = (fullName) => {
+			return individualSum[fullName];
+		};
+
+		return { handleIndividualSum, sum };
+	};
+
+	const handleSumOweExpenses = () => {
+		let individualSum = {};
+		let sum = 0;
+
+		oweExpensesData?.forEach((item) => {
+			const personTotal = item.expenses.reduce(
+				(prev, curr) =>
+					parseFloat(prev) +
+					parseFloat(curr.status === "UP" ? curr.amount : 0),
+				0
+			);
+			individualSum[item?.owner?.full_name] = personTotal;
+			sum += personTotal;
+		});
+
+		console.log(individualSum);
+
+		const handleIndividualSum = (fullName) => {
+			return individualSum[fullName];
+		};
+
+		return { handleIndividualSum, sum };
+	};
+
+	// const sumPersonSettleExpenses = (data) => {
+	// 	const totalAmount = data.reduce(
+	// 		(prev, curr) =>
+	// 			parseFloat(prev) +
+	// 			parseFloat(curr.status === "UP" ? curr.amount : 0),
+	// 		0
+	// 	);
+	// 	// addSumSettleExpensesAmount(totalAmount);
+	// 	setSumSettleExpenses(sumSettleExpenses + totalAmount);
+	// 	return totalAmount;
+	// };
+
+	// const sumPersonOweExpenses = (data) => {
+	// 	const totalAmount = data.reduce(
+	// 		(prev, curr) =>
+	// 			parseFloat(prev) +
+	// 			parseFloat(curr.status === "UP" ? curr.amount : 0),
+	// 		0
+	// 	);
+	// 	// addSumOweExpensesAmount(totalAmount);
+	// 	setSumOweExpenses(sumOweExpenses + totalAmount);
+	// 	return totalAmount;
+	// };
 
 	return (
 		<Tabs isLazy variant={"unstyled"} h="full">
@@ -202,7 +277,7 @@ export const ExpenseList = () => {
 				<TabPanels flex={"1"} overflowY={"auto"}>
 					<TabPanel p="0" pt="2" h="full">
 						<Box h="full" overflow={"auto"}>
-							{settleExpenses?.map((item, idx) => (
+							{settleExpensesData?.map((item, idx) => (
 								<Grid
 									key={idx}
 									templateColumns="repeat(4, 1fr)"
@@ -216,7 +291,10 @@ export const ExpenseList = () => {
 										colorMode
 									)}
 									w="full"
-									onClick={() => handleSettleModal(item)}
+									onClick={() => {
+										setSelectedSettleExpense(item);
+										return settleExpensesModalDisclosure.onOpen();
+									}}
 									_hover={{
 										bgColor: handleColorModeValue(
 											"gray.100",
@@ -234,7 +312,7 @@ export const ExpenseList = () => {
 										noOfLines={2}
 										fontWeight="medium"
 									>
-										{item.name}
+										{item.loaner.full_name}
 									</GridItem>
 									<GridItem
 										fontWeight={"semibold"}
@@ -242,7 +320,11 @@ export const ExpenseList = () => {
 										display="flex"
 										justifyContent="end"
 									>
-										{parseAmount(item.totalAmount)}
+										{parseAmount(
+											handleSumSettleExpenses().handleIndividualSum(
+												item.loaner.full_name
+											)
+										)}
 									</GridItem>
 								</Grid>
 							))}
@@ -282,14 +364,14 @@ export const ExpenseList = () => {
 									alignItems={"center"}
 									justifyContent={"end"}
 								>
-									₹{sumSettleExpensesAmount}
+									₹{handleSumSettleExpenses().sum}
 								</GridItem>
 							</Grid>
 						</Box>
 					</TabPanel>
 					<TabPanel p="0" pt="2" h="full">
 						<Box h="full" overflow={"auto"}>
-							{oweExpenses?.map((expense, idx) => (
+							{oweExpensesData?.map((data, idx) => (
 								<Grid
 									key={idx}
 									templateColumns="repeat(4, 1fr)"
@@ -303,7 +385,10 @@ export const ExpenseList = () => {
 										colorMode
 									)}
 									w="full"
-									onClick={() => handleOweModal(expense)}
+									onClick={() => {
+										setSelectedOweExpense(data);
+										return oweExpensesModalDisclosure.onOpen();
+									}}
 									_hover={{
 										bgColor: handleColorModeValue(
 											"gray.100",
@@ -321,7 +406,7 @@ export const ExpenseList = () => {
 										noOfLines={2}
 										fontWeight="medium"
 									>
-										{expense.name}
+										{data?.owner.full_name}
 									</GridItem>
 									<GridItem
 										fontWeight={"semibold"}
@@ -329,7 +414,11 @@ export const ExpenseList = () => {
 										display="flex"
 										justifyContent="end"
 									>
-										{parseAmount(expense.totalAmount)}
+										{parseAmount(
+											handleSumOweExpenses().handleIndividualSum(
+												data.owner.full_name
+											)
+										)}
 									</GridItem>
 								</Grid>
 							))}
@@ -369,7 +458,7 @@ export const ExpenseList = () => {
 									alignItems={"center"}
 									justifyContent={"end"}
 								>
-									₹{sumOweExpenseAmount}
+									₹{handleSumOweExpenses().sum}
 								</GridItem>
 							</Grid>
 						</Box>
@@ -379,12 +468,12 @@ export const ExpenseList = () => {
 			<OweModal
 				onClose={oweExpensesModalDisclosure.onClose}
 				isOpen={oweExpensesModalDisclosure.isOpen}
-				data={modalData}
+				data={selectedOweExpense}
 			/>
 			<SettleModal
 				onClose={settleExpensesModalDisclosure.onClose}
 				isOpen={settleExpensesModalDisclosure.isOpen}
-				data={modalData}
+				data={selectedSettleExpense}
 			/>
 		</Tabs>
 	);
