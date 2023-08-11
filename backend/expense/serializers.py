@@ -7,8 +7,20 @@ from .models import Expense, SharedExpense
 from user.serializers import UserSerializer
 
 
+class ExpenseBaseSerializer(serializers.ModelSerializer):
+    owner = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Expense
+        fields = ["id", "description", "owner"]
+
+    def get_owner(self, obj):
+        return UserSerializer(obj.owner).data
+
+
 class SharedExpenseBaseSerializer(serializers.ModelSerializer):
     loaner = serializers.SerializerMethodField()
+    expense = serializers.SerializerMethodField()
 
     class Meta:
         model = SharedExpense
@@ -16,6 +28,24 @@ class SharedExpenseBaseSerializer(serializers.ModelSerializer):
 
     def get_loaner(self, obj):
         return UserSerializer(obj.loaner).data
+
+    def get_expense(self, obj):
+        return ExpenseBaseSerializer(obj.expense).data
+
+
+class SharedExpenseOweSerializer(serializers.ModelSerializer):
+    owner = serializers.SerializerMethodField()
+    expense = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SharedExpense
+        fields = "__all__"
+
+    def get_owner(self, obj):
+        return UserSerializer(obj.expense.owner).data
+
+    def get_expense(self, obj):
+        return ExpenseBaseSerializer(obj.expense).data
 
 
 class SharedExpenseCreateSerializer(serializers.ModelSerializer):
@@ -33,15 +63,6 @@ class SharedExpenseUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = SharedExpense
         fields = ["id", "amount", "status", "loaner_id"]
-
-    # def update(self, instance, validated_data):
-    #     loaner_id = validated_data.pop("loaner_id")
-    #     loaner = User.objects.get(id=loaner_id)
-    #     instance.loaner = loaner
-    #     instance.amount = validated_data.get("amount")
-    #     instance.status = validated_data.get("status")
-    #     instance.save()
-    #     return instance
 
 
 class ExpenseListSerializer(serializers.ModelSerializer):

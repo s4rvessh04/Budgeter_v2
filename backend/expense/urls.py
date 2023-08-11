@@ -11,4 +11,5 @@ urlpatterns = [
     path("shared/<int:pk>/", views.SharedExpenseRetrieveAPIView.as_view()),
     path("shared/<int:pk>/update", views.SharedExpenseUpdateAPIView.as_view()),
     path("shared/<int:pk>/delete", views.SharedExpenseDestroyAPIView.as_view()),
+    path("shared/owe/", views.SharedExpenseOweListAPIView.as_view()),
 ]
