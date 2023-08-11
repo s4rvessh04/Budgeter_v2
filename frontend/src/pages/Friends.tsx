@@ -2,6 +2,7 @@ import React from "react";
 import {
 	Avatar,
 	Box,
+	Button,
 	Container,
 	Flex,
 	FormControl,
@@ -14,67 +15,86 @@ import {
 	Text,
 	useColorModeValue,
 } from "@chakra-ui/react";
-import { FiSearch, FiUserMinus } from "react-icons/fi";
-import { Fa500Px, FaRegCompass } from "react-icons/fa";
 import { Navbar } from "../components";
-import { useQuery, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import { axiosRequest } from "../utils";
-import { useDebounce } from "../hooks";
+import {
+	HiOutlineCheck,
+	HiOutlineX,
+	HiSearch,
+	HiUserRemove,
+	HiX,
+} from "react-icons/hi";
 
 export const Friends = () => {
 	const [searchData, setSearchData] = React.useState<any>("");
-	const [discoverToggle, setDiscoverToggle] = React.useState<boolean>(false);
-	const [activeData, setActiveData] = React.useState<any>([]);
+
 	const queryClient = useQueryClient();
-	const debouncedSearchTerm = useDebounce(searchData, 500);
 
-	const friends = useQuery({
-		queryKey: ["friends", debouncedSearchTerm],
-		queryFn: () =>
-			axiosRequest
-				.get(`/friends?friend=${debouncedSearchTerm}`)
-				.then((res) => res.data),
-		enabled: !discoverToggle,
+	const {
+		data: friendsData,
+		isLoading: friendsLoading,
+		error: friendsError,
+	} = useQuery({
+		queryKey: ["friends"],
+		queryFn: () => axiosRequest.get(`/friends`).then((res) => res.data),
 		refetchOnWindowFocus: false,
 	});
 
-	const users = useQuery({
-		queryKey: ["users", debouncedSearchTerm],
+	const {
+		data: pendingFriends,
+		isLoading: pendingFriendsLoading,
+		error: pendingFriendsError,
+	} = useQuery({
+		queryKey: ["pendingFriends"],
 		queryFn: () =>
-			axiosRequest
-				.get(`/users?username=${debouncedSearchTerm}`)
-				.then((res) => res.data),
-		enabled: discoverToggle,
+			axiosRequest.get(`/friends/pending`).then((res) => res.data),
 		refetchOnWindowFocus: false,
 	});
 
-	if (users.isFetching || friends.isFetching) {
-		queryClient.invalidateQueries("friends");
-		queryClient.invalidateQueries("users");
-	}
+	console.log(friendsData, pendingFriends);
 
-	React.useEffect(() => {
-		if (discoverToggle) {
-			setActiveData(users!.data);
-		} else {
-			setActiveData(friends!.data);
-		}
-	}, [discoverToggle, users.isLoading, friends.isLoading]);
-
-	const handleDiscoverToggle = () => {
-		setDiscoverToggle(!discoverToggle);
-	};
+	const acceptFriendMutation = useMutation({
+		mutationFn: (data: any) =>
+			axiosRequest.put(`/friends/${data.id}/update`, data.payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries("friends");
+			queryClient.invalidateQueries("pendingFriends");
+		},
+		onError: (err) => {
+			console.log(err);
+		},
+	});
+	const removeFriendmutation = useMutation({
+		mutationFn: (data: any) =>
+			axiosRequest.delete(`/friends/${data.id}/delete`, data.payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries("friends");
+			queryClient.invalidateQueries("pendingFriends");
+		},
+		onError: (err) => {
+			console.log(err);
+		},
+	});
 
 	return (
 		<Navbar>
 			<Container
-				maxW={{ base: "container.lg", xl: "container.xl" }}
+				minW={{
+					base: "container.sm",
+					lg: "container.md",
+					xl: "container.xl",
+				}}
+				minH={{ xl: "100vh", base: "full" }}
+				maxW={"full"}
+				display={"flex"}
+				flexDirection={"column"}
 				px={{ base: 2, md: 4, lg: 4 }}
+				py={{ base: 2, md: 4, lg: 4 }}
 			>
 				<FormControl
 					w={{ base: "full", lg: "50%" }}
 					justifyItems="center"
-					m="auto"
 					mb={{ base: "4", lg: "6" }}
 					display="flex"
 					gap={2}
@@ -82,7 +102,7 @@ export const Friends = () => {
 					<InputGroup>
 						<InputLeftElement
 							pointerEvents={"none"}
-							children={<FiSearch />}
+							children={<HiSearch />}
 						/>
 						<Input
 							type={"search"}
@@ -97,14 +117,110 @@ export const Friends = () => {
 							onChange={(e) => setSearchData(e.target.value)}
 						/>
 					</InputGroup>
-					<IconButton
-						aria-label="discover"
-						icon={discoverToggle ? <Fa500Px /> : <FaRegCompass />}
-						variant={"outline"}
-						bg={useColorModeValue("white", "gray.800")}
-						onClick={handleDiscoverToggle}
-					/>
 				</FormControl>
+				{pendingFriends?.length > 0 ? (
+					<Box
+						my={6}
+						borderRadius={"xl"}
+						p={4}
+						bg={useColorModeValue("gray.200", "gray.800")}
+					>
+						<Text
+							mb={4}
+							fontSize={"xl"}
+							fontWeight={"semibold"}
+							ml={2}
+						>
+							New Requests!
+						</Text>
+						<Grid
+							templateColumns={{
+								base: "repeat(1, 1fr)",
+								lg: "repeat(3, 1fr)",
+							}}
+							gap={{ base: 2, lg: 4 }}
+						>
+							{pendingFriends?.map((data, idx) => (
+								<GridItem
+									key={idx}
+									display={"flex"}
+									border={"1px"}
+									borderColor={useColorModeValue(
+										"gray.200",
+										"gray.700"
+									)}
+									rounded="lg"
+									justifyContent="space-between"
+									alignItems="center"
+									px="4"
+									py="4"
+									bg={useColorModeValue(
+										"white",
+										"blackAlpha.300"
+									)}
+								>
+									<Flex gap={2}>
+										<Avatar
+											name={data?.user?.full_name}
+											src="https://bit.ly/broken-link"
+										/>
+										<Box>
+											<Text
+												fontSize={"lg"}
+												fontWeight="semibold"
+												color={useColorModeValue(
+													"gray.900",
+													"white"
+												)}
+											>
+												{data?.user?.full_name}
+											</Text>
+											<Text
+												fontSize={"smaller"}
+												color="gray.500"
+											>
+												@{data?.user?.username}
+											</Text>
+										</Box>
+									</Flex>
+									<Flex gap={4}>
+										<IconButton
+											aria-label="Accept"
+											icon={<HiOutlineCheck />}
+											colorScheme="green"
+											variant={"solid"}
+											onClick={() =>
+												acceptFriendMutation.mutate({
+													id: data?.id,
+													payload: {
+														friend: data?.friend
+															?.id,
+														status: "A",
+													},
+												})
+											}
+										/>
+										<IconButton
+											aria-label="Reject"
+											icon={<HiOutlineX />}
+											colorScheme="gray"
+											variant={"solid"}
+											onClick={() =>
+												removeFriendmutation.mutate({
+													id: data?.id,
+													payload: {
+														friend: data?.user?.id,
+														status: "R",
+													},
+												})
+											}
+										/>
+									</Flex>
+								</GridItem>
+							))}
+						</Grid>
+					</Box>
+				) : null}
 				<Grid
 					templateColumns={{
 						base: "repeat(1, 1fr)",
@@ -112,8 +228,8 @@ export const Friends = () => {
 					}}
 					gap={{ base: 2, lg: 4 }}
 				>
-					{activeData?.length > 0
-						? activeData?.map((val, idx) => (
+					{friendsData?.length > 0
+						? friendsData?.map((data, idx) => (
 								<GridItem
 									key={idx}
 									display={"flex"}
@@ -131,7 +247,7 @@ export const Friends = () => {
 								>
 									<Flex gap={2}>
 										<Avatar
-											name={val.full_name}
+											name={data?.friend?.full_name}
 											src="https://bit.ly/broken-link"
 										/>
 										<Box>
@@ -143,25 +259,35 @@ export const Friends = () => {
 													"white"
 												)}
 											>
-												{val.full_name}
+												{data?.friend?.full_name}
 											</Text>
 											<Text
 												fontSize={"smaller"}
 												color="gray.500"
 											>
-												@{val.username}
+												@{data?.friend?.username}
 											</Text>
 										</Box>
 									</Flex>
+									{data?.friend?.status}
 									<IconButton
 										aria-label="user-minus"
 										colorScheme="red"
-										variant="ghost"
-										icon={<FiUserMinus />}
+										variant="solid"
+										icon={<HiUserRemove />}
+										onClick={() =>
+											removeFriendmutation.mutate({
+												id: data?.id,
+												payload: {
+													friend: data?.friend?.id,
+													status: "R",
+												},
+											})
+										}
 									/>
 								</GridItem>
 						  ))
-						: "No data found!"}
+						: "No Friends found!"}
 				</Grid>
 			</Container>
 		</Navbar>
