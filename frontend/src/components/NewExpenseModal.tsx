@@ -100,6 +100,7 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 		register,
 		handleSubmit,
 		watch,
+		reset,
 		formState: { errors },
 	} = useForm<IFormData>({
 		defaultValues: {
@@ -133,6 +134,11 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 				status: "success",
 				duration: 2500,
 				isClosable: true,
+			});
+			reset({
+				description: "",
+				amount: 0,
+				shared_expenses: [],
 			});
 			onClose();
 		},
