@@ -24,7 +24,7 @@ import { QueryClient, QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
 
 const theme = extendTheme({
-	initialColorMode: "light",
+	initialColorMode: "system",
 	useSystemColorMode: false,
 	fonts: {
 		body: `'Inter', sans-serif`,
@@ -47,9 +47,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
 		<ChakraProvider theme={theme}>
 			<CookiesProvider>
 				<QueryClientProvider client={queryClient}>
-					<ColorModeScript
-						initialColorMode={theme.initialColorMode}
-					/>
+					<ColorModeScript initialColorMode={theme.initialColorMode} />
 					<App />
 					<ReactQueryDevtools initialIsOpen={false} />
 				</QueryClientProvider>

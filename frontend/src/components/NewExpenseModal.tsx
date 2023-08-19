@@ -34,7 +34,7 @@ import {
 } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { Cookies } from "react-cookie";
-import { axiosRequest } from "../utils";
+import { axiosRequest, parseAmount } from "../utils";
 
 interface Props {
 	onClose: () => void;
@@ -78,13 +78,13 @@ const TotalAmount = ({
 	return (
 		<Box>
 			<Text fontSize={"sm"} fontWeight={"semibold"} mb={4}>
-				Your Split: {yourSplit}
+				Your Split = {yourSplit}
 			</Text>
 			<Text fontSize="lg" fontWeight={"semibold"}>
 				Final Amount
 			</Text>
 			<Text fontSize="xl" fontWeight={"extrabold"}>
-				{yourSplit + sharedAmount}
+				{parseAmount(yourSplit + sharedAmount)}
 			</Text>
 		</Box>
 	);
@@ -128,6 +128,8 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 			axiosRequest.post("/expenses/", formData),
 		onSuccess: () => {
 			queryClient.invalidateQueries("expenses");
+			queryClient.invalidateQueries("sharedExpenses");
+			queryClient.invalidateQueries("oweExpenses");
 			toast({
 				title: "Expense Added!",
 				description: "Expense added successfully.",
@@ -192,9 +194,7 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 										<FormLabel>Amount</FormLabel>
 										<NumberInput
 											{...field}
-											onChange={(val) =>
-												field.onChange(parseFloat(val))
-											}
+											onChange={(val) => field.onChange(parseFloat(val))}
 											step={200}
 											defaultValue={0}
 											min={0}
@@ -222,41 +222,27 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 										)}
 										defaultValue={field.loaner_id}
 									>
-										<option
-											defaultValue={"-"}
-											defaultChecked={true}
-										>
+										<option defaultValue={"-"} defaultChecked={true}>
 											-
 										</option>
 										{data.map((item, index) => (
-											<option
-												value={item.friend.id}
-												key={index}
-											>
+											<option value={item.friend.id} key={index}>
 												{item.friend.full_name}
 											</option>
 										))}
 									</Select>
 									<Controller
 										control={control}
-										name={
-											`shared_expenses.${index}.amount` as const
-										}
+										name={`shared_expenses.${index}.amount` as const}
 										render={({ field }) => (
 											<NumberInput
 												step={100}
 												defaultValue={0}
 												min={0}
 												{...field}
-												onChange={(val) =>
-													field.onChange(
-														parseFloat(val)
-													)
-												}
+												onChange={(val) => field.onChange(parseFloat(val))}
 											>
-												<NumberInputField
-													required={true}
-												/>
+												<NumberInputField required={true} />
 												<NumberInputStepper>
 													<NumberIncrementStepper />
 													<NumberDecrementStepper />
@@ -284,14 +270,8 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 								Add Split
 							</Button>
 
-							<Flex
-								justifyContent={"space-between"}
-								alignItems="center"
-							>
-								<TotalAmount
-									control={control}
-									amount={watch("amount")}
-								/>
+							<Flex justifyContent={"space-between"} alignItems="center">
+								<TotalAmount control={control} amount={watch("amount")} />
 								<Button
 									alignSelf={"flex-end"}
 									mb={1}

@@ -15,13 +15,13 @@ import {
 	TagLabel,
 	TagLeftIcon,
 	Flex,
+	useDisclosure,
 } from "@chakra-ui/react";
-import { parseAmount, parseDate } from "../utils";
-import { IExpenseList } from "../types/modals.component.types";
-import { FiAlertCircle, FiCheckCircle } from "react-icons/fi";
-import { useSettleExpenseStore } from "../stores";
-import React from "react";
-import shallow from "zustand/shallow";
+import { axiosRequest, parseAmount, parseDate } from "../utils";
+import { FiAlertCircle } from "react-icons/fi";
+import { ExpenseEditModal } from "./ExpenseEditModal";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "react-query";
 
 interface Props {
 	onClose: () => void;
@@ -30,139 +30,100 @@ interface Props {
 }
 
 export const SettleModal = ({ onClose, isOpen, data }: Props) => {
-	const TOAST = useToast();
+	const expenseEditModalDisclosure = useDisclosure();
+	const queryClient = useQueryClient();
 
-	const [selectedExpenses, setSelectedExpenses] = React.useState<Number[]>(
-		[]
-	);
-	const [settleData, setSettleData] = React.useState();
+	const [activeExpenseId, setActiveExpenseId] = useState(undefined);
 
-	React.useEffect(() => {
-		if (data) {
-			setSettleData(data);
-		}
-		return;
-	}, [data]);
-
-	const totalAmount = React.useMemo(() => {
-		return data?.expenses?.reduce(
-			(prev, curr) =>
-				parseFloat(prev) +
-				parseFloat(curr.status === "UP" ? curr.amount : 0),
-			0
-		);
-	}, [data]);
-
-	function handleSelectExpense(idx: Number) {
-		if (selectedExpenses.includes(idx)) {
-			setSelectedExpenses(
-				selectedExpenses.filter((item) => item !== idx)
-			);
-		} else {
-			setSelectedExpenses([idx, ...selectedExpenses]);
-		}
-	}
-
-	React.useEffect(() => {
-		if (!isOpen) {
-			setSelectedExpenses([]);
-		}
-		return;
-	}, [isOpen]);
+	const { data: settleExpenseData, isLoading: settleExpensesLoading } =
+		useQuery({
+			queryKey: "activeSettleExpense",
+			enabled: activeExpenseId !== undefined,
+			queryFn: () =>
+				axiosRequest
+					.get(`/expenses/${activeExpenseId}`)
+					.then((res) => res.data),
+			onSuccess: () => {
+				queryClient.invalidateQueries("sharedExpenses");
+				queryClient.invalidateQueries("expenses");
+			},
+		});
 
 	return (
-		<Modal isOpen={isOpen} onClose={onClose}>
-			<ModalOverlay />
-			<ModalContent bg={useColorModeValue("white", "gray.800")}>
-				<ModalHeader>
-					<Text fontWeight={"semibold"} fontSize="xl">
-						{data?.loaner!?.full_name}
-					</Text>
-					<Text fontWeight={"semibold"} fontSize="lg">
-						{parseAmount(totalAmount)}
-					</Text>
-				</ModalHeader>
-				<ModalCloseButton _focus={{ outline: "none" }} />
-				<ModalBody mb={2} px="2">
-					{data?.expenses?.map((expense, idx) => (
-						<Box
-							key={idx}
-							onClick={() => handleSelectExpense(idx)}
-							bg={useColorModeValue("gray.50", "gray.700")}
-							border="1px"
-							rounded={"lg"}
-							borderColor={useColorModeValue(
-								"gray.200",
-								"gray.800"
-							)}
-							cursor="pointer"
-							px="3"
-							py="2"
-							mb="2"
-						>
-							<Text
-								fontWeight="normal"
-								fontSize={"sm"}
-								textColor={useColorModeValue(
-									"gray.600",
-									"gray.400"
-								)}
-								textTransform={"capitalize"}
-								mb={1}
-								// fontFamily={"monospace"}
+		<>
+			<Modal isOpen={isOpen} onClose={onClose}>
+				<ModalOverlay />
+				<ModalContent bg={useColorModeValue("white", "gray.900")}>
+					<ModalHeader>
+						<Text fontWeight={"semibold"} fontSize="xl">
+							{data?.user!?.full_name}
+						</Text>
+						<Text fontWeight={"semibold"} fontSize="lg">
+							{parseAmount(data?.expensesSum)}
+						</Text>
+					</ModalHeader>
+					<ModalCloseButton _focus={{ outline: "none" }} />
+					<ModalBody px={3}>
+						{data?.expenses?.map((expense, idx) => (
+							<Box
+								key={idx}
+								bg={useColorModeValue("blackAlpha.50", "gray.700")}
+								rounded={"md"}
+								_hover={{
+									bg: useColorModeValue("blackAlpha.100", "gray.800"),
+								}}
+								cursor="pointer"
+								px={3}
+								py={2}
+								mb={3}
+								onClick={() => {
+									setActiveExpenseId(expense.expense.id);
+									onClose();
+									return expenseEditModalDisclosure.onOpen();
+								}}
 							>
-								{parseDate(expense?.create_dt).date}
-							</Text>
-							<Text fontWeight={"medium"}>
-								{expense?.expense.description}
-							</Text>
-							<Flex
-								display={"flex"}
-								justifyContent="space-between"
-								alignItems={"center"}
-								mt={2}
-							>
-								<Text fontSize={"lg"} fontWeight="semibold">
-									₹{expense?.amount}
-								</Text>
-								<Tag
-									rounded={"full"}
-									variant="subtle"
-									colorScheme={
-										expense?.status === "UP"
-											? "red"
-											: "green"
-									}
+								<Text
+									fontWeight="normal"
+									fontSize={"sm"}
+									textColor={useColorModeValue("gray.600", "gray.400")}
+									textTransform={"capitalize"}
+									mb={1}
 								>
-									<TagLeftIcon as={FiAlertCircle} />
-									<TagLabel>
-										{expense?.status === "UP"
-											? "Unpaid"
-											: "Paid"}
-									</TagLabel>
-								</Tag>
-							</Flex>
-						</Box>
-					))}
-				</ModalBody>
-				<ModalFooter>
-					<Button
-						colorScheme="telegram"
-						mr={3}
-						onClick={() =>
-							TOAST({
-								title: `Saved successfully`,
-								position: "bottom",
-								isClosable: true,
-								status: "success",
-							}) && onClose()
-						}
-					>
-						Save
-					</Button>
-					<Button onClick={onClose}>Cancel</Button>
-				</ModalFooter>
-			</ModalContent>
-		</Modal>
+									{parseDate(expense?.create_dt).date}
+								</Text>
+								<Text fontWeight={"medium"}>
+									{expense?.expense.description}
+								</Text>
+								<Flex
+									display={"flex"}
+									justifyContent="space-between"
+									alignItems={"center"}
+									mt={2}
+								>
+									<Text fontSize={"lg"} fontWeight="semibold">
+										₹{expense?.amount}
+									</Text>
+									<Tag
+										rounded={"full"}
+										variant="subtle"
+										colorScheme={expense?.status === "UP" ? "red" : "green"}
+									>
+										<TagLeftIcon as={FiAlertCircle} />
+										<TagLabel>
+											{expense?.status === "UP" ? "Unpaid" : "Paid"}
+										</TagLabel>
+									</Tag>
+								</Flex>
+							</Box>
+						))}
+					</ModalBody>
+				</ModalContent>
+			</Modal>
+			<ExpenseEditModal
+				isOpen={expenseEditModalDisclosure.isOpen}
+				onClose={expenseEditModalDisclosure.onClose}
+				data={settleExpenseData}
+			/>
+		</>
 	);
 };

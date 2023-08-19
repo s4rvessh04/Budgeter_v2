@@ -5,9 +5,7 @@ import {
 	Button,
 	Container,
 	Divider,
-	Flex,
 	FormControl,
-	FormLabel,
 	Grid,
 	GridItem,
 	Icon,
@@ -16,10 +14,14 @@ import {
 	InputRightElement,
 	Text,
 	useColorModeValue,
+	useToast,
 } from "@chakra-ui/react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 import { SubmitHandler, useForm } from "react-hook-form";
+import { useMutation, useQuery, useQueryClient } from "react-query";
+import { axiosLogout, axiosRequest } from "../utils";
+import { useLocation } from "wouter";
 
 interface IFormData {
 	first_name: string;
@@ -30,21 +32,107 @@ interface IFormData {
 }
 
 export const Settings = () => {
+	const toast = useToast();
+	const queryClient = useQueryClient();
+
+	const [, setLocation] = useLocation();
 	const [viewPassword, setViewPassword] = React.useState<boolean>(false);
 
 	function toggleViewPass() {
 		setViewPassword(!viewPassword);
 	}
 
+	const { data, isLoading } = useQuery(
+		"currentUser",
+		() => axiosRequest.get("/users/whoami/").then((res) => res.data),
+		{ refetchOnWindowFocus: false }
+	);
+
 	const {
-		control,
+		reset,
 		register,
 		handleSubmit,
 		formState: { errors },
-	} = useForm<IFormData>();
+	} = useForm<IFormData>({
+		defaultValues: {
+			first_name: "",
+			last_name: "",
+			username: "",
+			email: "",
+		},
+		mode: "onBlur",
+	});
+
+	const logoutMutation = useMutation({
+		mutationFn: () => axiosLogout.post("/logout/"),
+		onSuccess({ data }) {
+			toast({
+				title: "Logout Successful!",
+				description: data.detail,
+				status: "success",
+				duration: 3500,
+				isClosable: true,
+			});
+			setLocation("/login");
+		},
+		onError(err) {
+			toast({
+				title: "Error Occured!",
+				description: JSON.stringify(err.response.data),
+				status: "error",
+				duration: 5000,
+				isClosable: true,
+			});
+			return;
+		},
+	});
+
+	const mutation = useMutation({
+		mutationFn: (formData: IFormData) =>
+			axiosRequest.put(`/users/${data.username}/update/`, formData),
+		onSuccess: () => {
+			toast({
+				title: "Update Successful!",
+				description: "Data updated successfully.",
+				status: "success",
+				duration: 4000,
+				isClosable: true,
+			});
+		},
+		onError: (err: any) => {
+			Object.entries(err.response.data).forEach(([key, value]) => {
+				toast({
+					title: "Error " + key,
+					description: value,
+					status: "error",
+					duration: 5000,
+					isClosable: true,
+				});
+			});
+			return;
+		},
+	});
 
 	const handleFormSubmit: SubmitHandler<IFormData> = (data) => {
-		console.log(data);
+		Object.keys(data).forEach((key) => data[key] === "" && delete data[key]);
+
+		const hasPasswordField = Object.keys(data).includes("password");
+
+		if (hasPasswordField) {
+			logoutMutation.mutate();
+			toast({
+				title: "Password Changed!",
+				description: "Please login again.",
+				status: "success",
+				duration: 3500,
+				isClosable: true,
+			});
+		}
+		if (!isLoading) {
+			mutation.mutate(data);
+		}
+		reset();
+		queryClient.invalidateQueries("currentUser");
 	};
 
 	return (
@@ -66,7 +154,9 @@ export const Settings = () => {
 					Account Settings
 				</Text>
 				<Box
-					bg={useColorModeValue("gray.200", "gray.800")}
+					bg={useColorModeValue("white", "gray.800")}
+					border={"1px"}
+					borderColor={useColorModeValue("gray.200", "gray.700")}
 					borderRadius={"xl"}
 					px={6}
 				>
@@ -88,12 +178,9 @@ export const Settings = () => {
 									<Input
 										{...register("first_name")}
 										type="text"
-										bg={useColorModeValue(
-											"white",
-											"gray.900"
-										)}
+										bg={useColorModeValue("white", "gray.900")}
 										variant={"outline"}
-										placeholder="First Name"
+										placeholder={data?.full_name.split(" ")[0]}
 									/>
 								</FormControl>
 								<FormControl>
@@ -101,21 +188,13 @@ export const Settings = () => {
 									<Input
 										{...register("last_name")}
 										type="text"
-										bg={useColorModeValue(
-											"white",
-											"gray.900"
-										)}
-										placeholder="Last Name"
+										bg={useColorModeValue("white", "gray.900")}
+										placeholder={data?.full_name.split(" ")[1]}
 									/>
 								</FormControl>
 							</GridItem>
 						</Grid>
-						<Divider
-							borderColor={useColorModeValue(
-								"gray.300",
-								"gray.700"
-							)}
-						/>
+						<Divider borderColor={useColorModeValue("gray.300", "gray.700")} />
 						<Grid
 							gap={4}
 							my={6}
@@ -133,21 +212,13 @@ export const Settings = () => {
 									<Input
 										{...register("username")}
 										type="text"
-										bg={useColorModeValue(
-											"white",
-											"gray.900"
-										)}
-										placeholder="Username"
+										bg={useColorModeValue("white", "gray.900")}
+										placeholder={data?.username}
 									/>
 								</FormControl>
 							</GridItem>
 						</Grid>
-						<Divider
-							borderColor={useColorModeValue(
-								"gray.300",
-								"gray.700"
-							)}
-						/>
+						<Divider borderColor={useColorModeValue("gray.300", "gray.700")} />
 						<Grid
 							gap={4}
 							my={6}
@@ -165,21 +236,13 @@ export const Settings = () => {
 									<Input
 										{...register("email")}
 										type="email"
-										bg={useColorModeValue(
-											"white",
-											"gray.900"
-										)}
-										placeholder="email@email.com"
+										bg={useColorModeValue("white", "gray.900")}
+										placeholder={data?.email}
 									/>
 								</FormControl>
 							</GridItem>
 						</Grid>
-						<Divider
-							borderColor={useColorModeValue(
-								"gray.300",
-								"gray.700"
-							)}
-						/>
+						<Divider borderColor={useColorModeValue("gray.300", "gray.700")} />
 						<Grid
 							gap={4}
 							my={6}
@@ -196,24 +259,13 @@ export const Settings = () => {
 									<InputGroup size="md">
 										<Input
 											{...register("password")}
-											type={
-												viewPassword
-													? "text"
-													: "password"
-											}
+											type={viewPassword ? "text" : "password"}
 											placeholder="New password"
-											bg={useColorModeValue(
-												"white",
-												"gray.900"
-											)}
+											bg={useColorModeValue("white", "gray.900")}
 										/>
 										<InputRightElement>
 											<Icon
-												as={
-													viewPassword
-														? FaEyeSlash
-														: FaEye
-												}
+												as={viewPassword ? FaEyeSlash : FaEye}
 												onClick={toggleViewPass}
 											/>
 										</InputRightElement>
@@ -234,11 +286,7 @@ export const Settings = () => {
 								alignItems={"end"}
 								justifyContent={"end"}
 							>
-								<Button
-									variant={"solid"}
-									colorScheme="blue"
-									type="submit"
-								>
+								<Button variant={"solid"} colorScheme="blue" type="submit">
 									Save Changes
 								</Button>
 							</GridItem>

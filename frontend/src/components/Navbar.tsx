@@ -1,5 +1,8 @@
 import { ReactNode } from "react";
 import { Link as WouterLink, useLocation, useRoute } from "wouter";
+import { IconType } from "react-icons";
+import { useMutation } from "react-query";
+
 import {
 	IconButton,
 	Box,
@@ -17,35 +20,25 @@ import {
 	HStack,
 	Image,
 } from "@chakra-ui/react";
-import {
-	FiMenu,
-	FiPlus,
-	FiTool,
-	FiLogOut,
-	FiBell,
-	FiCompass,
-} from "react-icons/fi";
+import { FiMenu } from "react-icons/fi";
 import { RiCompassDiscoverFill } from "react-icons/ri";
-import { IconType } from "react-icons";
+import {
+	HiBell,
+	HiCog,
+	HiHome,
+	HiLogout,
+	HiPlusCircle,
+	HiUsers,
+} from "react-icons/hi";
+
+import viteSvg from "../../public/vite.svg";
+import { axiosLogout } from "../utils";
 import {
 	NotificationsModal,
 	QuickSettingsModal,
 	NewExpenseModal,
 	ThemeToggler,
 } from "../components";
-import { useMutation } from "react-query";
-import { axiosLogout } from "../utils";
-
-import viteSvg from "../../public/vite.svg";
-import {
-	HiBell,
-	HiCog,
-	HiHome,
-	HiLogout,
-	HiPlus,
-	HiPlusCircle,
-	HiUsers,
-} from "react-icons/hi";
 
 interface LinkItemProps {
 	name: string;
@@ -222,11 +215,7 @@ const SidebarContent = ({
 					>
 						<HStack>
 							<Image src={viteSvg} h="30px" />
-							<Text
-								fontSize="2xl"
-								fontWeight="bold"
-								fontFamily={"monospace"}
-							>
+							<Text fontSize="2xl" fontWeight="bold" fontFamily={"monospace"}>
 								Budgeter
 							</Text>
 						</HStack>
@@ -254,8 +243,7 @@ const SidebarContent = ({
 							_hover={{
 								bg: useColorModeValue("gray.900", "white"),
 								color: "white",
-								bgGradient:
-									"linear(to-r, green.500, green.700)",
+								bgGradient: "linear(to-r, green.500, green.700)",
 							}}
 							shadow="base"
 							onClick={() => newExpenseModal.onOpen()}
@@ -271,11 +259,7 @@ const SidebarContent = ({
 							Add Expense
 						</Flex>
 						{LinkItems.map((link) => (
-							<NavLink
-								key={link.name}
-								icon={link.icon}
-								path={link.path}
-							>
+							<NavLink key={link.name} icon={link.icon} path={link.path}>
 								{link.name}
 							</NavLink>
 						))}

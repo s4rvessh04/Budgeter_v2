@@ -8,7 +8,6 @@ import {
 	ModalBody,
 	ModalCloseButton,
 	ModalContent,
-	ModalFooter,
 	ModalHeader,
 	ModalOverlay,
 	NumberInput,
@@ -17,9 +16,6 @@ import {
 	NumberDecrementStepper,
 	NumberIncrementStepper,
 	Text,
-	Tag,
-	TagLeftIcon,
-	TagLabel,
 	Flex,
 	useColorModeValue,
 	Box,
@@ -30,12 +26,9 @@ import {
 	MenuList,
 	MenuItem,
 	Icon,
-	Grid,
-	GridItem,
-	IconButton,
 } from "@chakra-ui/react";
-import { FiChevronDown, FiUser, FiUsers } from "react-icons/fi";
-import { axiosRequest, parseDate } from "../utils";
+import { FiChevronDown } from "react-icons/fi";
+import { axiosRequest, parseAmount, parseDate } from "../utils";
 import { useMutation, useQueryClient, useQuery } from "react-query";
 import {
 	Control,
@@ -46,7 +39,7 @@ import {
 	useWatch,
 } from "react-hook-form";
 import { Cookies } from "react-cookie";
-import { HiPlus, HiTrash } from "react-icons/hi";
+import { HiPlus } from "react-icons/hi";
 
 interface Props {
 	onClose: () => void;
@@ -82,13 +75,13 @@ const TotalAmount = ({
 	return (
 		<Box>
 			<Text fontSize={"sm"} fontWeight={"semibold"} mb={4}>
-				Your Split: {yourSplit}
+				Your split = {yourSplit}
 			</Text>
 			<Text fontSize="lg" fontWeight={"semibold"}>
 				Final Amount
 			</Text>
 			<Text fontSize="xl" fontWeight={"extrabold"}>
-				{yourSplit + sharedAmount}
+				{parseAmount(yourSplit + sharedAmount)}
 			</Text>
 		</Box>
 	);
@@ -98,13 +91,15 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 	const cookies = new Cookies();
 	const toast = useToast();
 	const queryClient = useQueryClient();
-	const dateTime = parseDate(data!?.create_dt);
 
 	const deleteExpenseMutation = useMutation({
 		mutationFn: (expneseId: number) =>
 			axiosRequest.delete(`/expenses/${expneseId}/delete`),
 		onSuccess: () => {
 			queryClient.invalidateQueries("expenses");
+			queryClient.invalidateQueries("sharedExpenses");
+			queryClient.invalidateQueries("oweExpenses");
+			queryClient.invalidateQueries("activeSettleExpense");
 			toast({
 				title: "Deleted!",
 				description: "Expense deleted successfully.",
@@ -130,6 +125,9 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 			axiosRequest.delete(`/expenses/shared/${sharedExpenseId}/delete`),
 		onSuccess: () => {
 			queryClient.invalidateQueries("expenses");
+			queryClient.invalidateQueries("sharedExpenses");
+			queryClient.invalidateQueries("oweExpenses");
+			queryClient.invalidateQueries("activeSettleExpense");
 			toast({
 				title: "Removed!",
 				description: "Removed successfully.",
@@ -173,8 +171,6 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 		register,
 		handleSubmit,
 		watch,
-		reset,
-		setValue,
 		formState: { errors },
 	} = useForm<IFormData>({
 		values: { ...data },
@@ -192,6 +188,9 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 			axiosRequest.put(`/expenses/${data.id}/update`, formData),
 		onSuccess: () => {
 			queryClient.invalidateQueries("expenses");
+			queryClient.invalidateQueries("sharedExpenses");
+			queryClient.invalidateQueries("oweExpenses");
+			queryClient.invalidateQueries("activeSettleExpense");
 			toast({
 				title: "Updated!",
 				description: "Expense updated successfully.",
@@ -214,7 +213,6 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 
 	const handleUpdateFormSubmit: SubmitHandler<IFormData> = (data) => {
 		updateMutation.mutate(data);
-		// console.log(data);
 	};
 
 	return (
@@ -248,11 +246,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 											<FormLabel>Amount</FormLabel>
 											<NumberInput
 												{...field}
-												onChange={(val) =>
-													field.onChange(
-														parseFloat(val)
-													)
-												}
+												onChange={(val) => field.onChange(parseFloat(val))}
 												step={200}
 												min={0}
 											>
@@ -277,39 +271,26 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 													valueAsNumber: true,
 												}
 											)}
-											defaultValue={
-												field?.loaner?.loaner_id
-											}
+											defaultValue={field?.loaner?.loaner_id}
 										>
 											{friendsList!.map((item, index) => (
-												<option
-													value={item.friend.id}
-													key={index}
-												>
+												<option value={item.friend.id} key={index}>
 													{item.friend.full_name}
 												</option>
 											))}
 										</Select>
 										<Controller
 											control={control}
-											name={
-												`shared_expenses.${index}.amount` as const
-											}
+											name={`shared_expenses.${index}.amount` as const}
 											render={({ field }) => (
 												<NumberInput
 													step={100}
 													defaultValue={0}
 													min={0}
 													{...field}
-													onChange={(val) =>
-														field.onChange(
-															parseFloat(val)
-														)
-													}
+													onChange={(val) => field.onChange(parseFloat(val))}
 												>
-													<NumberInputField
-														required={true}
-													/>
+													<NumberInputField required={true} />
 													<NumberInputStepper>
 														<NumberIncrementStepper />
 														<NumberDecrementStepper />
@@ -321,44 +302,23 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 											<MenuButton
 												p="2"
 												as={Button}
-												color={useColorModeValue(
-													"white",
-													"gray.700"
-												)}
+												color={useColorModeValue("white", "gray.700")}
 												_hover={{
 													bg:
 														field.status === "P"
-															? useColorModeValue(
-																	"green.600",
-																	"green.300"
-															  )
-															: useColorModeValue(
-																	"red.600",
-																	"red.300"
-															  ),
+															? useColorModeValue("green.600", "green.300")
+															: useColorModeValue("red.600", "red.300"),
 												}}
 												_active={{
 													bg:
 														field.status === "P"
-															? useColorModeValue(
-																	"green.600",
-																	"green.300"
-															  )
-															: useColorModeValue(
-																	"red.600",
-																	"red.300"
-															  ),
+															? useColorModeValue("green.600", "green.300")
+															: useColorModeValue("red.600", "red.300"),
 												}}
 												bg={
 													field.status === "P"
-														? useColorModeValue(
-																"green.500first",
-																"green.200"
-														  )
-														: useColorModeValue(
-																"red.500",
-																"red.200"
-														  )
+														? useColorModeValue("green.500", "green.200")
+														: useColorModeValue("red.500", "red.200")
 												}
 											>
 												<Icon
@@ -378,24 +338,14 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 													onClick={() =>
 														update(index, {
 															...field,
-															status:
-																field.status ===
-																"P"
-																	? "UP"
-																	: "P",
+															status: field.status === "P" ? "UP" : "P",
 														})
 													}
 												>
-													Mark{" "}
-													{field.status === "P"
-														? "Unpaid"
-														: "Paid"}
+													Mark {field.status === "P" ? "Unpaid" : "Paid"}
 												</MenuItem>
 												<MenuItem
-													color={useColorModeValue(
-														"red.600",
-														"red.300"
-													)}
+													color={useColorModeValue("red.600", "red.300")}
 													rounded={"md"}
 													border="none"
 													_hover={{
@@ -426,27 +376,15 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 								>
 									Add Split
 								</Button>
-								<Flex
-									justifyContent={"space-between"}
-									alignItems={"center"}
-								>
-									<TotalAmount
-										control={control}
-										amount={watch("amount")}
-									/>
+								<Flex justifyContent={"space-between"} alignItems={"center"}>
+									<TotalAmount control={control} amount={watch("amount")} />
 									<Flex alignSelf={"flex-end"} mb={1}>
 										<Button
 											colorScheme={"red"}
 											variant="ghost"
 											mr="3"
-											isLoading={
-												deleteExpenseMutation.isLoading
-											}
-											onClick={() =>
-												handleExpenseDeleteMutation(
-													data?.id
-												)
-											}
+											isLoading={deleteExpenseMutation.isLoading}
+											onClick={() => handleExpenseDeleteMutation(data?.id)}
 										>
 											Delete
 										</Button>{" "}
