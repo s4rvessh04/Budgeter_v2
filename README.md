@@ -1,7 +1,7 @@
 # Budgeter
 
 A full-stack web app focused on helping users handle personal expenses 💰
-![landing-page](https://github.com/s4rvessh04/Budgeter_v2/assets/68328137/c770eb85-c855-44e6-8f0b-5329fbc507b3)
+![Landing-page](https://github.com/s4rvessh04/Budgeter_v2/assets/68328137/e207b8ff-3389-4e94-b105-1238a40a687d)
 
 ## Built with ⚒️
 
@@ -18,24 +18,24 @@ Has a lot of important features like:
 
 ### Signup and Login 🔐
 
-https://github.com/s4rvessh04/Budgeter_v2/assets/68328137/e8e22955-07d1-476e-8137-735aee7d3a2b
+https://github.com/s4rvessh04/Budgeter_v2/assets/68328137/cef67035-f99a-44b8-9f42-c9ed3e2439ee
 
 ### Add your expenses ➕
 
-https://github.com/s4rvessh04/Budgeter_v2/assets/68328137/f31cdc67-8eec-4b5e-acb6-a536d4c661d6
+https://github.com/s4rvessh04/Budgeter_v2/assets/68328137/ab491e7e-dae0-4d99-bcbe-8d78ef52dc84
 
 ### Add Friends to share expenses 👥
 
-https://github.com/s4rvessh04/Budgeter_v2/assets/68328137/dc817fa9-1424-4fb0-b76d-e1bd878b8884
+https://github.com/s4rvessh04/Budgeter_v2/assets/68328137/34fb3078-d680-4553-a9dd-8b98128642a8
 
 ### Shared Expenses 🍻
 
-https://github.com/s4rvessh04/Budgeter_v2/assets/68328137/25b50fab-14ff-4a56-88e2-a64e1438dddc
+https://github.com/s4rvessh04/Budgeter_v2/assets/68328137/478bf75c-1426-4f84-beed-0ac6e939569a
 
 ### Account info update ✍️
 
-https://github.com/s4rvessh04/Budgeter_v2/assets/68328137/9f5ae36f-d9f8-400f-9ff9-382a97e788d8
+https://github.com/s4rvessh04/Budgeter_v2/assets/68328137/46fbd114-e06f-44f8-bd41-4276ad127ad1
 
 ### Dark Mode 🖤
 
-https://github.com/s4rvessh04/Budgeter_v2/assets/68328137/6a036ac1-953b-4617-887f-6d7e92ca4b6c
+https://github.com/s4rvessh04/Budgeter_v2/assets/68328137/8eb8ec3b-b685-4b20-bcea-8b953de4be8d
