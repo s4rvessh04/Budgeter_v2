@@ -28,7 +28,7 @@ import {
 	Icon,
 } from "@chakra-ui/react";
 import { FiChevronDown } from "react-icons/fi";
-import { axiosRequest, parseAmount, parseDate } from "../utils";
+import { axiosRequest, parseAmount } from "../utils";
 import { useMutation, useQueryClient, useQuery } from "react-query";
 import {
 	Control,
@@ -47,12 +47,31 @@ interface Props {
 	data: any;
 }
 
+interface ISharedExpense {
+	id?: number;
+	loaner_id?: number;
+	status?: "UP" | "P";
+	create_dt?: string;
+	update_dt?: string;
+	amount?: string;
+	expense?: number;
+}
+
+interface IFormData {
+	id?: number;
+	description?: string;
+	create_dt?: string;
+	update_dt?: string;
+	amount?: string;
+	shared_expenses?: ISharedExpense[];
+}
+
 const TotalAmount = ({
 	control,
 	amount,
 }: {
 	control: Control<IFormData>;
-	amount: number;
+	amount: string;
 }) => {
 	const formData = useWatch({
 		name: "shared_expenses",
@@ -60,16 +79,15 @@ const TotalAmount = ({
 	});
 
 	const sharedAmount: number = React.useMemo(() => {
-		const sum: number = formData.reduce(
-			(acc: string, cur: string) =>
-				parseFloat(acc) + (parseFloat(cur.amount) || 0),
+		const sum: number = formData!?.reduce(
+			(prev, curr) => prev + (parseFloat(curr.amount!) || 0),
 			0
 		);
 		return sum;
 	}, [formData]);
 
 	const yourSplit: number = React.useMemo(() => {
-		return amount - sharedAmount || 0;
+		return parseFloat(amount) - sharedAmount || 0;
 	}, [amount, sharedAmount]);
 
 	return (
@@ -147,11 +165,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 		},
 	});
 
-	const {
-		data: friendsList,
-		isLoading,
-		error,
-	} = useQuery(
+	const { data: friendsList, isLoading } = useQuery(
 		"friends",
 		() => axiosRequest.get("/friends/").then((res) => res.data),
 		{
@@ -166,6 +180,42 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 		deleteSharedExpenseMutation.mutate(sharedExpenseId);
 	};
 
+	const excludeFields = (data: any[], fields: string[]): any[] => {
+		return data.map((item) => {
+			const newItem = { ...item };
+			for (const field of fields) {
+				delete newItem[field];
+			}
+			return newItem;
+		});
+	};
+
+	const handleSharedExpenses = (data: any): any[] => {
+		let payload: any[] = [];
+
+		data!?.shared_expenses.map((sharedExpense, index) => {
+			let requiredData = {
+				id: 0,
+				loaner_name: "",
+				loaner_username: "",
+				loaner_id: 0,
+				amount: 0,
+				status: "UP",
+			};
+
+			requiredData.id = sharedExpense.id;
+			requiredData.amount = sharedExpense.amount;
+			requiredData.loaner_id = sharedExpense.loaner.id;
+			requiredData.loaner_name = sharedExpense.loaner.full_name;
+			requiredData.loaner_username = sharedExpense.loaner.username;
+			requiredData.status = sharedExpense.status;
+
+			payload.push(requiredData);
+		});
+
+		return payload;
+	};
+
 	const {
 		control,
 		register,
@@ -173,11 +223,24 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 		watch,
 		formState: { errors },
 	} = useForm<IFormData>({
-		values: { ...data },
-		mode: "onBlur",
+		values: {
+			id: data!?.id,
+			amount: data!?.amount,
+			description: data!?.description,
+			create_dt: data!?.create_dt,
+			update_dt: data!?.update_dt,
+			shared_expenses: handleSharedExpenses(data),
+		},
+		mode: "all",
+		// shouldUnregister: true,
 	});
 
-	const { fields, append, remove, update } = useFieldArray({
+	const {
+		fields: fieldsArray,
+		append,
+		remove,
+		update,
+	} = useFieldArray({
 		control,
 		name: "shared_expenses",
 		keyName: "fieldArrID",
@@ -260,25 +323,26 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 									)}
 								/>
 
-								{fields.map((field, index) => (
-									<Flex gap="4" mb="4" key={field.fieldArrID}>
-										<Select
-											required={true}
-											{...register(
-												`shared_expenses.${index}.loaner_id` as const,
-												{
-													required: true,
-													valueAsNumber: true,
-												}
+								{fieldsArray!?.map((arrayField, index) => (
+									<Flex gap="4" mb="4" key={arrayField.fieldArrID}>
+										<Controller
+											control={control}
+											name={`shared_expenses.${index}.loaner_id` as const}
+											rules={{ required: true }}
+											render={({ field }) => (
+												<Select required={true} {...field}>
+													{!isLoading &&
+														friendsList!.map((item, index) => (
+															<option
+																value={parseInt(item.friend.id)}
+																key={index}
+															>
+																{item.friend.full_name}
+															</option>
+														))}
+												</Select>
 											)}
-											defaultValue={field?.loaner?.loaner_id}
-										>
-											{friendsList!.map((item, index) => (
-												<option value={item.friend.id} key={index}>
-													{item.friend.full_name}
-												</option>
-											))}
-										</Select>
+										/>
 										<Controller
 											control={control}
 											name={`shared_expenses.${index}.amount` as const}
@@ -305,18 +369,18 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 												color={useColorModeValue("white", "gray.700")}
 												_hover={{
 													bg:
-														field.status === "P"
+														arrayField.status === "P"
 															? useColorModeValue("green.600", "green.300")
 															: useColorModeValue("red.600", "red.300"),
 												}}
 												_active={{
 													bg:
-														field.status === "P"
+														arrayField.status === "P"
 															? useColorModeValue("green.600", "green.300")
 															: useColorModeValue("red.600", "red.300"),
 												}}
 												bg={
-													field.status === "P"
+													arrayField.status === "P"
 														? useColorModeValue("green.500", "green.200")
 														: useColorModeValue("red.500", "red.200")
 												}
@@ -337,12 +401,12 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 													}}
 													onClick={() =>
 														update(index, {
-															...field,
-															status: field.status === "P" ? "UP" : "P",
+															...arrayField,
+															status: arrayField.status === "P" ? "UP" : "P",
 														})
 													}
 												>
-													Mark {field.status === "P" ? "Unpaid" : "Paid"}
+													Mark {arrayField.status === "P" ? "Unpaid" : "Paid"}
 												</MenuItem>
 												<MenuItem
 													color={useColorModeValue("red.600", "red.300")}
@@ -352,9 +416,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 														border: "none",
 													}}
 													onClick={() => {
-														handleSharedExpenseDeleteMutation(
-															parseInt(field.id)
-														);
+														handleSharedExpenseDeleteMutation(arrayField.id!);
 														remove(index);
 													}}
 												>
@@ -369,7 +431,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 									onClick={() =>
 										append({
 											loaner_id: 0,
-											amount: 0,
+											amount: "0",
 											status: "UP",
 										})
 									}
@@ -377,7 +439,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 									Add Split
 								</Button>
 								<Flex justifyContent={"space-between"} alignItems={"center"}>
-									<TotalAmount control={control} amount={watch("amount")} />
+									<TotalAmount control={control} amount={watch("amount")!} />
 									<Flex alignSelf={"flex-end"} mb={1}>
 										<Button
 											colorScheme={"red"}
@@ -387,7 +449,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 											onClick={() => handleExpenseDeleteMutation(data?.id)}
 										>
 											Delete
-										</Button>{" "}
+										</Button>
 										<Button
 											colorScheme={"telegram"}
 											type="submit"

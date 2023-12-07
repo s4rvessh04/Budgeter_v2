@@ -156,6 +156,7 @@ export const NewExpenseModal = ({ onClose, isOpen }: Props) => {
 	});
 
 	const handleFormSubmit: SubmitHandler<IFormData> = (data) => {
+		console.log("New expense", data);
 		mutation.mutate(data);
 	};
 

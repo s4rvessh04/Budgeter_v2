@@ -24,7 +24,6 @@ import shallow from "zustand/shallow";
 import { ExpenseEditModal } from "./ExpenseEditModal";
 
 import { useExpenseStore } from "../stores";
-import { IExpense, ISharedExpense } from "../types";
 import {
 	axiosRequest,
 	handleColorModeValue,
