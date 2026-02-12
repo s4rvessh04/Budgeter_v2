@@ -1,21 +1,12 @@
 import {
-	Modal,
-	ModalBody,
-	ModalCloseButton,
-	ModalContent,
-	ModalHeader,
-	ModalOverlay,
-	Text,
-	useColorModeValue,
-	useToast,
-	Box,
-	Tag,
-	TagLabel,
-	TagLeftIcon,
-	Flex,
-} from "@chakra-ui/react";
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { parseAmount, parseDate } from "../utils";
-import { FiAlertCircle, FiCheckCircle } from "react-icons/fi";
+import { AlertCircle, CheckCircle } from "lucide-react";
 
 interface Props {
 	onClose: () => void;
@@ -24,65 +15,48 @@ interface Props {
 }
 
 export const OweModal = ({ onClose, isOpen, data }: Props) => {
-	const TOAST = useToast();
-
 	return (
-		<Modal isOpen={isOpen} onClose={onClose}>
-			<ModalOverlay />
-			<ModalContent bg={useColorModeValue("white", "gray.900")}>
-				<ModalHeader>
-					<Text fontWeight={"semibold"} fontSize="xl">
-						{data?.user?.full_name}
-					</Text>
-					<Text fontWeight={"semibold"} fontSize="lg">
-						{parseAmount(data?.expensesSum)}
-					</Text>
-				</ModalHeader>
-				<ModalCloseButton _focus={{ outline: "none" }} />
-				<ModalBody mb={2} px="2">
-					{data?.expenses?.map((expense, idx) => (
-						<Box
+		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+			<DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+				<DialogHeader>
+					<DialogTitle className="flex justify-between items-center pr-8">
+						<span>{data?.user?.full_name}</span>
+						<span className="text-lg font-bold">{parseAmount(data?.expensesSum)}</span>
+					</DialogTitle>
+				</DialogHeader>
+				<div className="space-y-3 py-4">
+					{data?.expenses?.map((expense: any, idx: number) => (
+						<div
 							key={idx}
-							bg={useColorModeValue("blackAlpha.50", "gray.700")}
-							rounded={"md"}
-							px={3}
-							py={2}
-							mb={3}
+							className="rounded-md bg-muted/50 px-3 py-2"
 						>
-							<Text
-								fontWeight="normal"
-								fontSize={"sm"}
-								textColor={useColorModeValue("gray.600", "gray.400")}
-								textTransform={"capitalize"}
-								mb={1}
-							>
+							<div className="mb-1 text-sm text-muted-foreground capitalize">
 								{parseDate(expense?.create_dt).date}
-							</Text>
-							<Text fontWeight={"medium"}>{expense?.expense?.description}</Text>
-							<Flex
-								display={"flex"}
-								justifyContent="space-between"
-								alignItems={"center"}
-								mt={2}
-							>
-								<Text fontSize={"lg"} fontWeight="semibold">
+							</div>
+							<div className="font-medium">{expense?.expense?.description}</div>
+							<div className="mt-2 flex items-center justify-between">
+								<div className="text-lg font-semibold">
 									₹{expense?.amount}
-								</Text>
-								<Tag
-									rounded={"full"}
-									variant="subtle"
-									colorScheme={expense?.status === "UP" ? "red" : "green"}
+								</div>
+								<Badge
+									variant={expense?.status === "UP" ? "destructive" : "default"}
+									className="gap-1 rounded-full px-2"
 								>
-									<TagLeftIcon as={FiAlertCircle} />
-									<TagLabel>
-										{expense?.status === "UP" ? "Unpaid" : "Paid"}
-									</TagLabel>
-								</Tag>
-							</Flex>
-						</Box>
+									{expense?.status === "UP" ? (
+										<>
+											<AlertCircle className="h-3 w-3" /> Unpaid
+										</>
+									) : (
+										<>
+											<CheckCircle className="h-3 w-3" /> Paid
+										</>
+									)}
+								</Badge>
+							</div>
+						</div>
 					))}
-				</ModalBody>
-			</ModalContent>
-		</Modal>
+				</div>
+			</DialogContent>
+		</Dialog>
 	);
 };

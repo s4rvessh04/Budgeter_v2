@@ -1,37 +1,29 @@
 import React, { FormEvent } from "react";
 import { useMutation } from "react-query";
 import { useLocation } from "wouter";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
-import {
-	Box,
-	Button,
-	Container,
-	FormControl,
-	FormLabel,
-	Heading,
-	HStack,
-	Icon,
-	Image,
-	Input,
-	InputGroup,
-	InputRightElement,
-	Stack,
-	Text,
-	useBreakpointValue,
-	useColorModeValue,
-	useToast,
-} from "@chakra-ui/react";
+import { Eye, EyeOff } from "lucide-react";
+import { Cookies } from "react-cookie";
 
+import { cn } from "@/lib/utils";
 import { axiosRequest } from "../utils";
 import viteSvg from "../../public/vite.svg";
 import loginBackground from "../assets/login-background.jpg";
-import { Cookies } from "react-cookie";
+
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
 
 export const Signup = () => {
-	const toast = useToast();
+	const { toast } = useToast();
 	const cookies = new Cookies();
-
 	const [, setLocation] = useLocation();
+
+	// Local state for form inputs (keeping it simple as per original)
 	const [username, setUsername] = React.useState<string>("");
 	const [password, setPassword] = React.useState<string>("");
 	const [firstName, setFirstName] = React.useState<string>("");
@@ -52,9 +44,7 @@ export const Signup = () => {
 			toast({
 				title: "Account Created!",
 				description: "Login to continue...",
-				status: "success",
-				duration: 2500,
-				isClosable: true,
+				variant: "default",
 			});
 			setTimeout(() => {
 				setLocation("/login");
@@ -64,9 +54,7 @@ export const Signup = () => {
 			toast({
 				title: "Validation Error!",
 				description: "Please enter valid details.",
-				status: "error",
-				duration: 9000,
-				isClosable: true,
+				variant: "destructive",
 			});
 		},
 	});
@@ -81,209 +69,131 @@ export const Signup = () => {
 	}
 
 	return (
-		<Box
-			minH={"100vh"}
-			minW="100vw"
-			position="relative"
-			overflowY={"hidden"}
-		>
-			<Box
-				position="absolute"
-				w={"full"}
-				overflowY="auto"
-				bgGradient={
-					"linear(to-b, whiteAlpha.400, whiteAlpha.50, whiteAlpha.400)"
-				}
-				minH={"100vh"}
-				minW={"100vw"}
-			>
-				<Container
-					position={"absolute"}
-					left={0}
-					right={0}
-					maxW={"md"}
-					m="auto"
-				>
-					<Stack
-						spacing="6"
-						mt={{ base: 10, md: 20 }}
-						color="gray.900"
-					>
-						<Image src={viteSvg} h="80px" />
-						<Stack
-							spacing={{ base: "2", md: "3" }}
-							textAlign="center"
-						>
-							<Heading
-								fontWeight={"semibold"}
-								size={useBreakpointValue({
-									base: "xs",
-									md: "xl",
-								})}
-							>
-								Create your account
-							</Heading>
-							<HStack spacing="1" justify="center">
-								<Text color="muted">
-									Already have an account?
-								</Text>
-								<Button
-									variant="link"
-									colorScheme="blue"
-									border={"none"}
-									_hover={{
-										outline: "none",
-										border: "none",
-										color: "blue.600",
-									}}
-									onClick={() => setLocation("/login")}
-								>
-									Log in
-								</Button>
-							</HStack>
-						</Stack>
-					</Stack>
-					<Box
-						shadow={"lg"}
-						rounded="xl"
-						my={5}
-						px={5}
-						py={8}
-						w="full"
-						bgColor={useColorModeValue("white", "gray.800")}
-					>
-						<form onSubmit={onSubmit}>
-							<input
-								type="hidden"
-								name="csrfmiddlewaretoken"
-								value={cookies.get("csrftoken")}
-							/>
-							<HStack spacing="4" mb={8}>
-								<FormControl isRequired>
-									<FormLabel
-										fontSize={"sm"}
-										color={useColorModeValue(
-											"gray.700",
-											"white"
-										)}
-									>
-										First Name
-									</FormLabel>
-									<Input
-										type={"text"}
-										name="first_name"
-										onChange={(e) =>
-											setFirstName(e.target.value)
-										}
-									/>
-								</FormControl>
-								<FormControl isRequired>
-									<FormLabel
-										fontSize={"sm"}
-										color={useColorModeValue(
-											"gray.700",
-											"white"
-										)}
-									>
-										Last Name
-									</FormLabel>
-									<Input
-										type={"text"}
-										name="last_name"
-										onChange={(e) =>
-											setLastName(e.target.value)
-										}
-									/>
-								</FormControl>
-							</HStack>
-							<FormControl mb={8} isRequired>
-								<FormLabel
-									fontSize={"sm"}
-									color={useColorModeValue(
-										"gray.700",
-										"white"
-									)}
-								>
-									Email
-								</FormLabel>
-								<Input
-									type={"email"}
-									name="email"
-									onChange={(e) => setEmail(e.target.value)}
+		<div className="relative min-h-screen w-full lg:grid lg:grid-cols-2 lg:px-0">
+			<div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
+				<div
+					className="absolute inset-0 bg-zinc-900"
+					style={{
+						backgroundImage: `url(${loginBackground})`,
+						backgroundSize: "cover",
+						backgroundPosition: "center",
+					}}
+				/>
+				<div className="relative z-20 flex items-center text-lg font-medium">
+					<img src={viteSvg} className="mr-2 h-8 w-8" alt="Logo" />
+					Budgeter v2
+				</div>
+				<div className="relative z-20 mt-auto">
+					<blockquote className="space-y-2">
+						<p className="text-lg">
+							&ldquo;Join us and take control of your finances today.&rdquo;
+						</p>
+					</blockquote>
+				</div>
+			</div>
+			<div className="lg:p-8 flex items-center justify-center">
+				<div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+					<div className="flex flex-col space-y-2 text-center">
+						<h1 className="text-2xl font-semibold tracking-tight">
+							Create an account
+						</h1>
+						<p className="text-sm text-muted-foreground">
+							Enter your details below to create your account
+						</p>
+					</div>
+					<Card className="border-0 shadow-none">
+						<CardContent className="grid gap-4 p-0">
+							<form onSubmit={onSubmit}>
+								<input
+									type="hidden"
+									name="csrfmiddlewaretoken"
+									value={cookies.get("csrftoken")}
 								/>
-							</FormControl>
-							<FormControl mb={8} isRequired>
-								<FormLabel
-									fontSize={"sm"}
-									color={useColorModeValue(
-										"gray.700",
-										"white"
-									)}
-								>
-									Username
-								</FormLabel>
-								<Input
-									type="text"
-									name="username"
-									onChange={(e) =>
-										setUsername(e.target.value)
-									}
-								/>
-							</FormControl>
-							<FormControl mb={8} isRequired>
-								<FormLabel
-									fontSize={"sm"}
-									color={useColorModeValue(
-										"gray.700",
-										"white"
-									)}
-								>
-									Password
-								</FormLabel>
-								<InputGroup size="md">
-									<Input
-										type={
-											viewPassword ? "text" : "password"
-										}
-										name="password"
-										onChange={(e) =>
-											setPassword(e.target.value)
-										}
-									/>
-									<InputRightElement>
-										<Icon
-											as={
-												viewPassword
-													? FaEyeSlash
-													: FaEye
-											}
-											onClick={toggleViewPass}
+								<div className="grid gap-4">
+									<div className="grid grid-cols-2 gap-4">
+										<div className="grid gap-2">
+											<Label htmlFor="first_name">First Name</Label>
+											<Input
+												id="first_name"
+												type="text"
+												onChange={(e) => setFirstName(e.target.value)}
+												required
+											/>
+										</div>
+										<div className="grid gap-2">
+											<Label htmlFor="last_name">Last Name</Label>
+											<Input
+												id="last_name"
+												type="text"
+												onChange={(e) => setLastName(e.target.value)}
+												required
+											/>
+										</div>
+									</div>
+									<div className="grid gap-2">
+										<Label htmlFor="email">Email</Label>
+										<Input
+											id="email"
+											type="email"
+											onChange={(e) => setEmail(e.target.value)}
+											required
 										/>
-									</InputRightElement>
-								</InputGroup>
-							</FormControl>
-							<Button
-								isLoading={mutation.isLoading}
-								type="submit"
-								w="full"
-								colorScheme={"telegram"}
-								mt={0}
-							>
-								Create Account
-							</Button>
-						</form>{" "}
-					</Box>
-				</Container>
-			</Box>
-			<Image
-				src={loginBackground}
-				objectFit="cover"
-				objectPosition={"center"}
-				color="white"
-				minH="100vh"
-				h="100vh"
-				w="full"
-			/>
-		</Box>
+									</div>
+									<div className="grid gap-2">
+										<Label htmlFor="username">Username</Label>
+										<Input
+											id="username"
+											type="text"
+											onChange={(e) => setUsername(e.target.value)}
+											required
+										/>
+									</div>
+									<div className="grid gap-2">
+										<Label htmlFor="password">Password</Label>
+										<div className="relative">
+											<Input
+												id="password"
+												type={viewPassword ? "text" : "password"}
+												onChange={(e) => setPassword(e.target.value)}
+												required
+											/>
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon"
+												className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+												onClick={toggleViewPass}
+											>
+												{viewPassword ? (
+													<EyeOff className="h-4 w-4 text-muted-foreground" />
+												) : (
+													<Eye className="h-4 w-4 text-muted-foreground" />
+												)}
+											</Button>
+										</div>
+									</div>
+									<Button disabled={mutation.isLoading} type="submit">
+										{mutation.isLoading && (
+											<span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+										)}
+										Create Account
+									</Button>
+								</div>
+							</form>
+						</CardContent>
+					</Card>
+					<div className="px-8 text-center text-sm text-muted-foreground">
+						Already have an account?{" "}
+						<Button
+							variant="link"
+							className="px-0 underline underline-offset-4"
+							onClick={() => setLocation("/login")}
+						>
+							Login
+						</Button>
+					</div>
+				</div>
+			</div>
+		</div>
 	);
 };

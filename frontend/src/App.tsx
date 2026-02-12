@@ -12,35 +12,39 @@ import {
 	Settings,
 } from "./pages";
 import { useAuthStore } from "./stores";
+import { Toaster } from "@/components/ui/toaster";
 
 function App() {
 	const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
 	return (
-		<Switch>
-			<Route path="/">
-				{isAuthenticated ? <Redirect to="/home" /> : <Landing />}
-			</Route>
-			<Route path="/login">
-				{isAuthenticated ? <Redirect to="/home" /> : <Login />}
-			</Route>
-			<Route path="/signup">
-				{isAuthenticated ? <Redirect to="/home" /> : <Signup />}
-			</Route>
-			<ProtectedRoute path="/home">
-				<Home />
-			</ProtectedRoute>
-			<ProtectedRoute path="/friends">
-				<Friends />
-			</ProtectedRoute>
-			<ProtectedRoute path="/discover">
-				<FriendsDiscover />
-			</ProtectedRoute>
-			<ProtectedRoute path="/settings">
-				<Settings />
-			</ProtectedRoute>
-			<Route component={Error} />
-		</Switch>
+		<>
+			<Switch>
+				<Route path="/">
+					{isAuthenticated ? <Redirect to="/home" /> : <Landing />}
+				</Route>
+				<Route path="/login">
+					{isAuthenticated ? <Redirect to="/home" /> : <Login />}
+				</Route>
+				<Route path="/signup">
+					{isAuthenticated ? <Redirect to="/home" /> : <Signup />}
+				</Route>
+				<ProtectedRoute path="/home">
+					<Home />
+				</ProtectedRoute>
+				<ProtectedRoute path="/friends">
+					<Friends />
+				</ProtectedRoute>
+				<ProtectedRoute path="/discover">
+					<FriendsDiscover />
+				</ProtectedRoute>
+				<ProtectedRoute path="/settings">
+					<Settings />
+				</ProtectedRoute>
+				<Route component={Error} />
+			</Switch>
+			<Toaster />
+		</>
 	);
 }
 

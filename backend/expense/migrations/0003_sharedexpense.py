@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "amount",
-                    models.DecimalField(decimal_places=2, max_digits=999999999999),
+                    models.DecimalField(decimal_places=2, max_digits=12),
                 ),
                 (
                     "status",
