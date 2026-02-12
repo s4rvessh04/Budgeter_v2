@@ -1,42 +1,50 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { useQuery } from "react-query";
-import { FiUser, FiUsers } from "react-icons/fi";
-import {
-	Table,
-	Thead,
-	Tbody,
-	Tfoot,
-	Tr,
-	Th,
-	Td,
-	TableContainer,
-	Text,
-	Skeleton,
-	useDisclosure,
-	Box,
-	Tag,
-	TagLeftIcon,
-	TagLabel,
-	useColorMode,
-} from "@chakra-ui/react";
+import { User, Users, Search, Filter } from "lucide-react";
 import shallow from "zustand/shallow";
-
-import { ExpenseEditModal } from "./ExpenseEditModal";
 
 import { useExpenseStore } from "../stores";
 import {
 	axiosRequest,
-	handleColorModeValue,
 	handleDefault,
 	parseDate,
 } from "../utils";
 
+import { ExpenseEditModal } from "./ExpenseEditModal";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+
+interface IExpense {
+	id: number;
+	description: string;
+	amount: string;
+	create_dt: string;
+	update_dt: string;
+	shared_expenses: any[];
+}
+
 export const ExpenseTable = () => {
-	const { colorMode } = useColorMode();
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [modalData, setModalData] = useState<IExpense>();
+	const [searchQuery, setSearchQuery] = useState("");
+	const [filterType, setFilterType] = useState<"all" | "shared" | "self">("all");
 
-	const { isOpen, onOpen, onClose } = useDisclosure();
-
-	const [modalData, setModalData] = React.useState<IExpense>();
 	const [sumExpensesAmount, updateSumExpensesAmount] = useExpenseStore(
 		(state) => [state.sumExpensesAmount, state.updateSumExpensesAmount],
 		shallow
@@ -44,11 +52,34 @@ export const ExpenseTable = () => {
 
 	const { isLoading, data, isFetching } = useQuery(
 		["expenses"],
-		() => axiosRequest.get("/expenses/").then((res) => res.data),
+		() => axiosRequest.get("/expenses/").then((res) => res.data?.results ?? res.data),
 		{
 			refetchOnWindowFocus: false,
 		}
 	);
+
+	const filteredData = useMemo(() => {
+		if (!data) return [];
+		return data.filter((expense: IExpense) => {
+			const { date, time } = parseDate(expense.create_dt);
+			const type = expense.shared_expenses.length > 0 ? "shared" : "self";
+			const searchLower = searchQuery.toLowerCase();
+
+			const matchesSearch =
+				expense.description.toLowerCase().includes(searchLower) ||
+				expense.amount.toString().includes(searchLower) ||
+				date.toLowerCase().includes(searchLower) ||
+				time.toLowerCase().includes(searchLower) ||
+				type.includes(searchLower);
+
+			const isShared = expense.shared_expenses.length > 0;
+
+			if (filterType === "shared" && !isShared) return false;
+			if (filterType === "self" && isShared) return false;
+
+			return matchesSearch;
+		});
+	}, [data, searchQuery, filterType]);
 
 	const calcExpensesSum = React.useCallback(
 		(expenses: IExpense[]) =>
@@ -63,302 +94,161 @@ export const ExpenseTable = () => {
 				),
 				0
 			),
-		[data]
+		[]
 	);
 
 	React.useEffect(() => {
-		if (!isFetching) {
-			const expensesSum = calcExpensesSum(data);
+		if (!isFetching && filteredData) {
+			const expensesSum = calcExpensesSum(filteredData);
 			updateSumExpensesAmount(expensesSum);
 		}
-		return;
-	}, [isFetching]);
+	}, [isFetching, filteredData, calcExpensesSum, updateSumExpensesAmount]);
 
 	function handleModalData(data: IExpense): void {
 		setModalData(data);
-		return onOpen();
+		setIsModalOpen(true);
 	}
+
+	// Typewriter effect for placeholder
+	const [placeholder, setPlaceholder] = useState("");
+	const [isDeleting, setIsDeleting] = useState(false);
+	const [loopNum, setLoopNum] = useState(0);
+	const [typingSpeed, setTypingSpeed] = useState(150);
+
+	React.useEffect(() => {
+		const examples = ["'Groceries'", "'500'", "'October'", "'Shared'", "'2023'", "'Dinner'"];
+		const i = loopNum % examples.length;
+		const fullText = `Search ${examples[i]}...`;
+
+		const handleType = () => {
+			setPlaceholder(
+				isDeleting
+					? fullText.substring(0, placeholder.length - 1)
+					: fullText.substring(0, placeholder.length + 1)
+			);
+
+			setTypingSpeed(isDeleting ? 30 : 150);
+
+			if (!isDeleting && placeholder === fullText) {
+				setTimeout(() => setIsDeleting(true), 2000);
+			} else if (isDeleting && placeholder === "") {
+				setIsDeleting(false);
+				setLoopNum(loopNum + 1);
+			}
+		};
+
+		const timer = setTimeout(handleType, typingSpeed);
+		return () => clearTimeout(timer);
+	}, [placeholder, isDeleting, loopNum, typingSpeed]);
 
 	return (
 		<>
-			<TableContainer h={"full"} overflowY={"auto"}>
-				<Table variant="simple" h={"full"}>
-					<Thead
-						pos={"sticky"}
-						top={0}
-						bgColor={handleColorModeValue(
-							"blackAlpha.50",
-							"gray.900",
-							colorMode
-						)}
-					>
-						{data!?.length > 0 ? (
-							<Tr>
-								<Th>Date</Th>
-								<Th>Description</Th>
-								<Th>Type</Th>
-								<Th isNumeric>Amount</Th>
-							</Tr>
-						) : (
-							<Tr></Tr>
-						)}
-					</Thead>
-					{!isLoading ? (
-						data!?.length > 0 ? (
-							<Tbody h="full">
-								{data?.map((expense: any, idx: number) => (
-									<Tr
+			<div className="flex flex-col sm:flex-row gap-4 m-4">
+				<div className="relative flex-1">
+					<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+					<Input
+						placeholder={placeholder}
+						className="pl-9"
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+					/>
+				</div>
+				<div className="w-full sm:w-[180px]">
+					<Select value={filterType} onValueChange={(val: any) => setFilterType(val)}>
+						<SelectTrigger>
+							<div className="flex items-center gap-2">
+								<Filter className="h-4 w-4" />
+								<SelectValue placeholder="Filter by type" />
+							</div>
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">All Expenses</SelectItem>
+							<SelectItem value="shared">Shared</SelectItem>
+							<SelectItem value="self">Self</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+			</div>
+
+			<div className="rounded-md bg-card overflow-hidden">
+				<div className="overflow-x-auto">
+					<Table className="min-w-[600px]">
+						<TableHeader>
+							<TableRow>
+								<TableHead>Date</TableHead>
+								<TableHead>Description</TableHead>
+								<TableHead>Type</TableHead>
+								<TableHead className="text-right">Amount</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{isLoading || isFetching ? (
+								Array.from({ length: 7 }).map((_, idx) => (
+									<TableRow key={idx}>
+										<TableCell><Skeleton className="h-6 w-20" /></TableCell>
+										<TableCell><Skeleton className="h-6 w-32" /></TableCell>
+										<TableCell><Skeleton className="h-6 w-16" /></TableCell>
+										<TableCell><Skeleton className="h-6 w-16 ml-auto" /></TableCell>
+									</TableRow>
+								))
+							) : filteredData && filteredData.length > 0 ? (
+								filteredData.map((expense: IExpense, idx: number) => (
+									<TableRow
 										key={idx}
-										_hover={{
-											bgColor: handleColorModeValue(
-												"blackAlpha.50",
-												"gray.900",
-												colorMode
-											),
-											cursor: "pointer",
-										}}
-										bgColor={handleColorModeValue(
-											"white",
-											"gray.800",
-											colorMode
-										)}
+										className="cursor-pointer hover:bg-muted/50"
 										onClick={() => handleModalData(expense)}
 									>
-										<Td>
-											<Skeleton
-												isLoaded={!isFetching}
-												startColor={handleColorModeValue(
-													"blackAlpha.50",
-													"gray.400",
-													colorMode
+										<TableCell>
+											<div className="font-medium">{parseDate(expense.create_dt).date}</div>
+											<div className="text-xs text-muted-foreground">{parseDate(expense.create_dt).time}</div>
+										</TableCell>
+										<TableCell className="max-w-[200px] font-medium truncate">
+											{expense.description}
+										</TableCell>
+										<TableCell>
+											<Badge variant="secondary" className="gap-1 rounded-full px-3">
+												{expense.shared_expenses.length > 0 ? (
+													<>
+														<Users className="h-3 w-3" /> Shared
+													</>
+												) : (
+													<>
+														<User className="h-3 w-3" /> Self
+													</>
 												)}
-												endColor={handleColorModeValue(
-													"blackAlpha.200",
-													"gray.700",
-													colorMode
-												)}
-											>
-												<Box
-													fontWeight={"semibold"}
-													sx={{
-														fontVariantNumeric: "proportional-nums",
-														verticalAlign: "baseline",
-													}}
-												>
-													<Text fontSize={"sm"}>
-														{parseDate(expense.create_dt).date}
-													</Text>
-													<Text
-														fontSize={"xs"}
-														color={handleColorModeValue(
-															"gray.500",
-															"gray.400",
-															colorMode
-														)}
-														mt={0.5}
-													>
-														{parseDate(expense.create_dt).time}
-													</Text>
-												</Box>
-											</Skeleton>
-										</Td>
-										<Td maxW={{ base: "xs", lg: "sm" }} w="sm">
-											<Skeleton
-												isLoaded={!isFetching}
-												startColor={handleColorModeValue(
-													"blackAlpha.50",
-													"gray.400",
-													colorMode
-												)}
-												endColor={handleColorModeValue(
-													"blackAlpha.200",
-													"gray.700",
-													colorMode
-												)}
-											>
-												<Text
-													overflow={"hidden"}
-													textOverflow={"ellipsis"}
-													fontWeight={"medium"}
-													fontSize={"md"}
-													textTransform={"capitalize"}
-												>
-													{expense.description}
-												</Text>
-											</Skeleton>
-										</Td>
-										<Td>
-											<Skeleton
-												isLoaded={!isFetching}
-												startColor={handleColorModeValue(
-													"blackAlpha.50",
-													"gray.400",
-													colorMode
-												)}
-												endColor={handleColorModeValue(
-													"blackAlpha.200",
-													"gray.700",
-													colorMode
-												)}
-											>
-												<Tag
-													size={"md"}
-													variant="subtle"
-													colorScheme="telegram"
-													rounded={"full"}
-												>
-													<TagLeftIcon boxSize="12px">
-														{expense?.shared_expenses.length > 0 ? (
-															<FiUsers size={"24px"} />
-														) : (
-															<FiUser size={"24px"} />
-														)}
-													</TagLeftIcon>
-													<TagLabel>
-														{expense?.shared_expenses.length > 0
-															? "Shared"
-															: "Self"}
-													</TagLabel>
-												</Tag>
-											</Skeleton>
-										</Td>
-										<Td isNumeric>
-											<Skeleton
-												isLoaded={!isFetching}
-												startColor={handleColorModeValue(
-													"blackAlpha.50",
-													"gray.400",
-													colorMode
-												)}
-												endColor={handleColorModeValue(
-													"blackAlpha.200",
-													"gray.700",
-													colorMode
-												)}
-											>
-												<Text fontSize={"md"} fontWeight={"semibold"}>
-													₹{expense.amount}
-												</Text>
-											</Skeleton>
-										</Td>
-									</Tr>
-								))}
-							</Tbody>
-						) : (
-							<Tbody
-								fontWeight={"medium"}
-								color={handleColorModeValue("red.500", "red.600", colorMode)}
-								verticalAlign="center"
-							>
-								<Td textAlign={"center"}>No Expenses Found!</Td>
-							</Tbody>
-						)
-					) : (
-						<Tbody>
-							{[1, 1, 1, 1, 1, 1, 1].map((item, idx) => (
-								<Tr
-									key={idx}
-									_hover={{
-										bgColor: handleColorModeValue(
-											"gray.100",
-											"gray.900",
-											colorMode
-										),
-										cursor: "pointer",
-									}}
-									bgColor={handleColorModeValue("white", "gray.800", colorMode)}
-								>
-									<Td>
-										<Skeleton
-											isLoaded={isFetching}
-											startColor={handleColorModeValue(
-												"gray.100",
-												"gray.400",
-												colorMode
-											)}
-											endColor={handleColorModeValue(
-												"gray.400",
-												"gray.700",
-												colorMode
-											)}
-											h="6"
-										></Skeleton>
-									</Td>
-									<Td>
-										<Skeleton
-											isLoaded={isFetching}
-											startColor={handleColorModeValue(
-												"gray.100",
-												"gray.400",
-												colorMode
-											)}
-											endColor={handleColorModeValue(
-												"gray.400",
-												"gray.700",
-												colorMode
-											)}
-											h="6"
-										></Skeleton>
-									</Td>
-									<Td>
-										<Skeleton
-											isLoaded={isFetching}
-											startColor={handleColorModeValue(
-												"gray.100",
-												"gray.400",
-												colorMode
-											)}
-											endColor={handleColorModeValue(
-												"gray.400",
-												"gray.700",
-												colorMode
-											)}
-											h="6"
-										></Skeleton>
-									</Td>
-									<Td>
-										<Skeleton
-											isLoaded={isFetching}
-											startColor={handleColorModeValue(
-												"gray.100",
-												"gray.400",
-												colorMode
-											)}
-											endColor={handleColorModeValue(
-												"gray.400",
-												"gray.700",
-												colorMode
-											)}
-											h="6"
-										></Skeleton>
-									</Td>
-								</Tr>
-							))}
-						</Tbody>
-					)}
-					<Tfoot
-						pos={"sticky"}
-						bottom={0}
-						bgColor={handleColorModeValue(
-							"blackAlpha.50",
-							"gray.900",
-							colorMode
-						)}
-					>
-						{data!?.length > 0 ? (
-							<Tr>
-								<Th>ITEMS</Th>
-								<Th>{data?.length}</Th>
-								<Th>TOTAL</Th>
-								<Th isNumeric>₹{sumExpensesAmount}</Th>
-							</Tr>
-						) : (
-							<></>
-						)}
-					</Tfoot>
-				</Table>
-			</TableContainer>
-			<ExpenseEditModal onClose={onClose} isOpen={isOpen} data={modalData} />
+											</Badge>
+										</TableCell>
+										<TableCell className="text-right font-bold">
+											₹{expense.amount}
+										</TableCell>
+									</TableRow>
+								))
+							) : (
+								<TableRow>
+									<TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+										No Expenses Found!
+									</TableCell>
+								</TableRow>
+							)}
+						</TableBody>
+					</Table>
+				</div>
+			</div>
+
+			<div className="flex items-center justify-between border-t p-4 font-medium bg-muted/20">
+				<div className="flex gap-4">
+					<span>ITEMS: {filteredData?.length || 0}</span>
+				</div>
+				<div className="flex gap-4">
+					<span>TOTAL: ₹{sumExpensesAmount}</span>
+				</div>
+			</div>
+
+			<ExpenseEditModal
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+				data={modalData}
+			/>
 		</>
 	);
 };

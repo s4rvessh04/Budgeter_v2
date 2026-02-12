@@ -24,10 +24,10 @@ class FriendCreateUpdateSerializer(serializers.ModelSerializer):
         model = Friend
         fields = ["friend", "status"]
 
-    # def validate(self, attrs):
-    #     if attrs["friend"] == self.context["request"].user:
-    #         raise serializers.ValidationError("You cannot add yourself as a friend.")
-    #     return attrs
+    def validate(self, attrs):
+        if attrs["friend"] == self.context["request"].user:
+            raise serializers.ValidationError("You cannot add yourself as a friend.")
+        return attrs
 
     def create(self, validated_data):
         validated_data["user"] = self.context["request"].user

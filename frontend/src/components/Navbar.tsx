@@ -1,36 +1,18 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link as WouterLink, useLocation, useRoute } from "wouter";
-import { IconType } from "react-icons";
 import { useMutation } from "react-query";
-
 import {
-	IconButton,
-	Box,
-	CloseButton,
-	Flex,
-	Icon,
-	useColorModeValue,
-	Drawer,
-	DrawerContent,
-	Text,
-	useDisclosure,
-	BoxProps,
-	FlexProps,
-	useToast,
-	HStack,
-	Image,
-} from "@chakra-ui/react";
-import { FiMenu } from "react-icons/fi";
-import { RiCompassDiscoverFill } from "react-icons/ri";
-import {
-	HiBell,
-	HiCog,
-	HiHome,
-	HiLogout,
-	HiPlusCircle,
-	HiUsers,
-} from "react-icons/hi";
+	Bell,
+	Compass,
+	Home,
+	LogOut,
+	Menu,
+	PlusCircle,
+	Settings,
+	Users,
+} from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import viteSvg from "../../public/vite.svg";
 import { axiosLogout } from "../utils";
 import {
@@ -39,24 +21,31 @@ import {
 	NewExpenseModal,
 	ThemeToggler,
 } from "../components";
+import { Button } from "@/components/ui/button";
+import {
+	Sheet,
+	SheetContent,
+	SheetTrigger,
+} from "@/components/ui/sheet";
+import { useToast } from "@/components/ui/use-toast";
 
 interface LinkItemProps {
 	name: string;
 	path: string;
-	icon: IconType;
+	icon: React.ElementType;
 }
 
 const LinkItems: Array<LinkItemProps> = [
-	{ name: "Home", path: "/home", icon: HiHome },
-	{ name: "Friends", path: "/friends", icon: HiUsers },
-	{ name: "Discover", path: "/discover", icon: RiCompassDiscoverFill },
-	{ name: "Settings", path: "/settings", icon: HiCog },
+	{ name: "Home", path: "/home", icon: Home },
+	{ name: "Friends", path: "/friends", icon: Users },
+	{ name: "Discover", path: "/discover", icon: Compass },
+	{ name: "Settings", path: "/settings", icon: Settings },
 ];
 
 export function Navbar({ children }: { children: ReactNode }) {
-	const { isOpen, onOpen, onClose } = useDisclosure();
-	const toast = useToast();
+	const { toast } = useToast();
 	const [, setLocation] = useLocation();
+	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 	const mutation = useMutation({
 		mutationFn: () => axiosLogout.post("/logout/"),
@@ -64,9 +53,7 @@ export function Navbar({ children }: { children: ReactNode }) {
 			toast({
 				title: "Logout Successful!",
 				description: data.detail,
-				status: "success",
-				duration: 2500,
-				isClosable: true,
+				variant: "default",
 			});
 			setLocation("/");
 		},
@@ -75,9 +62,7 @@ export function Navbar({ children }: { children: ReactNode }) {
 				toast({
 					title: "Error Occured!",
 					description: err.message,
-					status: "error",
-					duration: 9000,
-					isClosable: true,
+					variant: "destructive",
 				});
 			}
 		},
@@ -88,98 +73,51 @@ export function Navbar({ children }: { children: ReactNode }) {
 	}
 
 	return (
-		<Box
-			minH="100vh"
-			minW="100vw"
-			maxH="100vh"
-			maxW="100vh"
-			overflow="auto"
-			bg={useColorModeValue("gray.100", "gray.900")}
-		>
-			<SidebarContent
-				logoutLoading={mutation.isLoading}
-				onClose={() => onClose}
-				handleLogout={handleLogout}
-				display={{ base: "none", lg: "block" }}
-			/>
-			<Drawer
-				autoFocus={false}
-				isOpen={isOpen}
-				placement="left"
-				onClose={onClose}
-				returnFocusOnClose={false}
-				onOverlayClick={onClose}
-				size="full"
-			>
-				<DrawerContent>
+		<div className="flex min-h-screen w-full flex-col bg-muted/40">
+			{/* Mobile Nav */}
+			<header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 lg:hidden">
+				<Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+					<SheetTrigger asChild>
+						<Button size="icon" variant="outline" className="sm:hidden">
+							<Menu className="h-5 w-5" />
+							<span className="sr-only">Toggle Menu</span>
+						</Button>
+					</SheetTrigger>
+					<SheetContent side="left" className="sm:max-w-xs p-0">
+						<div className="flex h-full flex-col">
+							<SidebarContent
+								handleLogout={handleLogout}
+								logoutLoading={mutation.isLoading}
+								onClose={() => setIsSidebarOpen(false)}
+							/>
+						</div>
+					</SheetContent>
+				</Sheet>
+				<div className="flex items-center gap-2">
+					<img src={viteSvg} className="h-6 w-6" alt="Logo" />
+					<span className="text-lg font-bold font-mono">Budgeter</span>
+				</div>
+			</header>
+
+			<div className="flex flex-1 overflow-hidden">
+				{/* Desktop Sidebar */}
+				<aside className="hidden w-[240px] flex-col border-r bg-background lg:flex">
 					<SidebarContent
-						logoutLoading={mutation.isLoading}
-						onClose={onClose}
 						handleLogout={handleLogout}
+						logoutLoading={mutation.isLoading}
+						onClose={() => { }}
 					/>
-				</DrawerContent>
-			</Drawer>
-			{/* mobilenav */}
-			<MobileNav display={{ base: "flex", lg: "none" }} onOpen={onOpen} />
-			<Box
-				ml={{ base: 0, lg: 60 }}
-				// py={{ base: 5, lg: 2 }}
-			>
-				{children}
-			</Box>
-		</Box>
+				</aside>
+
+				<main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+					{children}
+				</main>
+			</div>
+		</div>
 	);
 }
 
-interface NavItemProps extends FlexProps {
-	icon: IconType;
-	path: string;
-	children: String;
-}
-
-const NavLink = ({ icon, path, children, ...rest }: NavItemProps) => {
-	const [isActive] = useRoute(path);
-
-	return (
-		<WouterLink href={path}>
-			<Flex
-				style={{
-					textDecoration: "none",
-				}}
-				bg={isActive ? useColorModeValue("gray.900", "gray.700") : ""}
-				color={isActive ? "white" : useColorModeValue("black", "white")}
-				_focus={{ boxShadow: "none" }}
-				align="center"
-				p="4"
-				mx="4"
-				mb="2"
-				borderRadius="lg"
-				role="group"
-				fontWeight={isActive ? "bold" : "medium"}
-				cursor="pointer"
-				_hover={{
-					bg: useColorModeValue("gray.900", "gray.700"),
-					color: "white",
-				}}
-				{...rest}
-			>
-				{icon && (
-					<Icon
-						mr="3"
-						fontSize="20"
-						_groupHover={{
-							color: "white",
-						}}
-						as={icon}
-					/>
-				)}
-				{children}
-			</Flex>
-		</WouterLink>
-	);
-};
-
-interface SidebarProps extends BoxProps {
+interface SidebarProps {
 	onClose: () => void;
 	handleLogout: () => void;
 	logoutLoading: boolean;
@@ -189,152 +127,113 @@ const SidebarContent = ({
 	onClose,
 	handleLogout,
 	logoutLoading,
-	...rest
 }: SidebarProps) => {
-	const notificationsModal = useDisclosure();
-	const quickSettingsModal = useDisclosure();
-	const newExpenseModal = useDisclosure();
+	// Modal states
+	const [isNotifOpen, setIsNotifOpen] = useState(false);
+	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+	const [isNewExpenseOpen, setIsNewExpenseOpen] = useState(false);
 
 	return (
 		<>
-			<Box
-				bg={useColorModeValue("white", "gray.900")}
-				borderRight="1px"
-				borderRightColor={useColorModeValue("gray.200", "gray.700")}
-				w={{ base: "full", lg: 60 }}
-				pos="fixed"
-				h={"full"}
-				{...rest}
-			>
-				<Flex flexDirection={"column"} h="full">
-					<Flex
-						py="5"
-						alignItems="center"
-						mx="8"
-						justifyContent="space-between"
-					>
-						<HStack>
-							<Image src={viteSvg} h="30px" />
-							<Text fontSize="2xl" fontWeight="bold" fontFamily={"monospace"}>
-								Budgeter
-							</Text>
-						</HStack>
-						<CloseButton
-							display={{ base: "flex", lg: "none" }}
-							onClick={onClose}
-						/>
-					</Flex>
-					<Flex flexDirection={"column"} flex="1">
-						<Flex
-							style={{
-								textDecoration: "none",
-							}}
-							color={useColorModeValue("white", "white")}
-							bg={useColorModeValue("green.500", "green.700")}
-							_focus={{ boxShadow: "none" }}
-							align="center"
-							p="4"
-							mx="4"
-							mb="2"
-							borderRadius="lg"
-							fontWeight={"semibold"}
-							role="group"
-							cursor="pointer"
-							_hover={{
-								bg: useColorModeValue("gray.900", "white"),
-								color: "white",
-								bgGradient: "linear(to-r, green.500, green.700)",
-							}}
-							shadow="base"
-							onClick={() => newExpenseModal.onOpen()}
+			<div className="flex h-full flex-col gap-2">
+				<div className="flex h-14 items-center border-b px-6 lg:h-[60px]">
+					<Link to="/" className="flex items-center gap-2 font-semibold">
+						<img src={viteSvg} className="h-6 w-6" alt="Logo" />
+						<span className="font-mono text-xl font-bold">Budgeter</span>
+					</Link>
+				</div>
+
+				<div className="flex-1 overflow-auto py-2">
+					<nav className="grid items-start px-4 text-sm font-medium">
+						<Button
+							variant="default"
+							className="mb-4 justify-start gap-2 bg-green-600 hover:bg-green-700 text-white"
+							onClick={() => setIsNewExpenseOpen(true)}
 						>
-							<Icon
-								mr="3"
-								fontSize="20"
-								_groupHover={{
-									color: "white",
-								}}
-								as={HiPlusCircle}
-							/>
+							<PlusCircle className="h-4 w-4" />
 							Add Expense
-						</Flex>
+						</Button>
+
 						{LinkItems.map((link) => (
-							<NavLink key={link.name} icon={link.icon} path={link.path}>
+							<NavLink key={link.name} icon={link.icon} path={link.path} onClick={onClose}>
 								{link.name}
 							</NavLink>
 						))}
-					</Flex>
-					<Flex
-						justifyContent={"space-around"}
-						mb={{ base: 14, lg: 4 }}
-						py="5"
-						px={{ base: "4", lg: "4" }}
-						gap={4}
-					>
-						<ThemeToggler w={"full"} aria-label="Theme toggler" />
-						<IconButton
-							aria-label="notification-btn"
-							icon={<HiBell />}
-							fontSize={"20"}
-							w={"full"}
-							onClick={() => notificationsModal.onOpen()}
-						/>
-						<IconButton
-							isLoading={logoutLoading}
-							w={"full"}
-							fontSize={"20"}
-							aria-label="log-out-btn"
-							icon={<HiLogout />}
-							colorScheme="red"
+					</nav>
+				</div>
+
+				<div className="mt-auto border-t p-4">
+					<div className="flex items-center justify-between gap-2">
+						<ThemeToggler />
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => setIsNotifOpen(true)}
+							title="Notifications"
+						>
+							<Bell className="h-4 w-4" />
+						</Button>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
 							onClick={handleLogout}
-						/>
-					</Flex>
-				</Flex>
-			</Box>
-			<NotificationsModal
-				onClose={notificationsModal.onClose}
-				isOpen={notificationsModal.isOpen}
-			/>
-			<QuickSettingsModal
-				onClose={quickSettingsModal.onClose}
-				isOpen={quickSettingsModal.isOpen}
-			/>
-			<NewExpenseModal
-				onClose={newExpenseModal.onClose}
-				isOpen={newExpenseModal.isOpen}
-			/>
+							disabled={logoutLoading}
+							title="Logout"
+						>
+							<LogOut className="h-4 w-4" />
+						</Button>
+					</div>
+				</div>
+
+				{/* Modals */}
+				<NotificationsModal
+					isOpen={isNotifOpen}
+					onClose={() => setIsNotifOpen(false)}
+				/>
+				<QuickSettingsModal
+					isOpen={isSettingsOpen}
+					onClose={() => setIsSettingsOpen(false)}
+				/>
+				<NewExpenseModal
+					isOpen={isNewExpenseOpen}
+					onClose={() => setIsNewExpenseOpen(false)}
+				/>
+			</div>
 		</>
 	);
 };
 
-interface MobileProps extends FlexProps {
-	onOpen: () => void;
+interface NavItemProps {
+	icon: React.ElementType;
+	path: string;
+	children: ReactNode;
+	onClick?: () => void;
 }
-const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
+
+const NavLink = ({ icon: Icon, path, children, onClick }: NavItemProps) => {
+	const [isActive] = useRoute(path);
+
 	return (
-		<Flex
-			ml={{ base: 0, lg: 60 }}
-			px={{ base: 2, md: 4, lg: 24 }}
-			py={5}
-			alignItems="center"
-			bg={useColorModeValue("white", "gray.900")}
-			borderBottomWidth="1px"
-			borderBottomColor={useColorModeValue("gray.200", "gray.700")}
-			justifyContent="flex-start"
-			{...rest}
-		>
-			<IconButton
-				variant="outline"
-				onClick={onOpen}
-				aria-label="open menu"
-				icon={<FiMenu />}
-			/>
-			<HStack ml={{ base: 4, lg: 8 }}>
-				<Image src={viteSvg} h="30px" />
-				<Text fontSize="2xl" fontWeight="bold" fontFamily={"monospace"}>
-					Budgeter
-				</Text>
-			</HStack>
-		</Flex>
+		<WouterLink href={path} onClick={onClick}>
+			<a
+				className={cn(
+					"flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+					isActive
+						? "bg-muted text-primary"
+						: "text-muted-foreground"
+				)}
+			>
+				<Icon className="h-4 w-4" />
+				{children}
+			</a>
+		</WouterLink>
 	);
 };
+
+// Helper Link component since wouter's Link renders an anchor tag but we might want custom styling or handling
+const Link = ({ to, children, className }: { to: string, children: ReactNode, className?: string }) => (
+	<WouterLink href={to}>
+		<a className={className}>{children}</a>
+	</WouterLink>
+)

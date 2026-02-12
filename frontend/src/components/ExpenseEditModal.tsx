@@ -1,45 +1,41 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
-	Button,
-	FormControl,
-	FormLabel,
-	Input,
-	Modal,
-	ModalBody,
-	ModalCloseButton,
-	ModalContent,
-	ModalHeader,
-	ModalOverlay,
-	NumberInput,
-	NumberInputField,
-	NumberInputStepper,
-	NumberDecrementStepper,
-	NumberIncrementStepper,
-	Text,
-	Flex,
-	useColorModeValue,
-	Box,
-	useToast,
-	Select,
-	Menu,
-	MenuButton,
-	MenuList,
-	MenuItem,
-	Icon,
-} from "@chakra-ui/react";
-import { FiChevronDown } from "react-icons/fi";
-import { axiosRequest, parseAmount } from "../utils";
-import { useMutation, useQueryClient, useQuery } from "react-query";
-import {
-	Control,
-	Controller,
-	SubmitHandler,
-	useFieldArray,
 	useForm,
+	useFieldArray,
+	SubmitHandler,
+	Control,
 	useWatch,
+	Controller,
 } from "react-hook-form";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import { Cookies } from "react-cookie";
-import { HiPlus } from "react-icons/hi";
+import { ChevronDown, Plus, Trash } from "lucide-react";
+
+import { axiosRequest, parseAmount } from "../utils";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Props {
 	onClose: () => void;
@@ -53,7 +49,7 @@ interface ISharedExpense {
 	status?: "UP" | "P";
 	create_dt?: string;
 	update_dt?: string;
-	amount?: string;
+	amount?: string | number;
 	expense?: number;
 }
 
@@ -62,7 +58,7 @@ interface IFormData {
 	description?: string;
 	create_dt?: string;
 	update_dt?: string;
-	amount?: string;
+	amount?: string | number;
 	shared_expenses?: ISharedExpense[];
 }
 
@@ -71,7 +67,7 @@ const TotalAmount = ({
 	amount,
 }: {
 	control: Control<IFormData>;
-	amount: string;
+	amount: string | number;
 }) => {
 	const formData = useWatch({
 		name: "shared_expenses",
@@ -79,40 +75,36 @@ const TotalAmount = ({
 	});
 
 	const sharedAmount: number = React.useMemo(() => {
-		const sum: number = formData!?.reduce(
-			(prev, curr) => prev + (parseFloat(curr.amount!) || 0),
-			0
-		);
+		const sum = formData?.reduce((acc, cur) => acc + (parseFloat(cur.amount?.toString() || "0") || 0), 0) ?? 0;
 		return sum;
 	}, [formData]);
 
 	const yourSplit: number = React.useMemo(() => {
-		return parseFloat(amount) - sharedAmount || 0;
+		return (parseFloat(amount?.toString() || "0")) - sharedAmount || 0;
 	}, [amount, sharedAmount]);
 
 	return (
-		<Box>
-			<Text fontSize={"sm"} fontWeight={"semibold"} mb={4}>
-				Your split = {yourSplit}
-			</Text>
-			<Text fontSize="lg" fontWeight={"semibold"}>
-				Final Amount
-			</Text>
-			<Text fontSize="xl" fontWeight={"extrabold"}>
-				{parseAmount(yourSplit + sharedAmount)}
-			</Text>
-		</Box>
+		<div className="rounded-lg border bg-muted/50 p-4">
+			<div className="flex justify-between text-sm font-medium">
+				<span>Your Split</span>
+				<span>{yourSplit}</span>
+			</div>
+			<div className="mt-2 flex justify-between text-lg font-bold">
+				<span>Final Amount</span>
+				<span>{parseAmount(yourSplit + sharedAmount)}</span>
+			</div>
+		</div>
 	);
 };
 
 export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 	const cookies = new Cookies();
-	const toast = useToast();
+	const { toast } = useToast();
 	const queryClient = useQueryClient();
 
 	const deleteExpenseMutation = useMutation({
-		mutationFn: (expneseId: number) =>
-			axiosRequest.delete(`/expenses/${expneseId}/delete`),
+		mutationFn: (expenseId: number) =>
+			axiosRequest.delete(`/expenses/${expenseId}/delete`),
 		onSuccess: () => {
 			queryClient.invalidateQueries("expenses");
 			queryClient.invalidateQueries("sharedExpenses");
@@ -121,9 +113,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 			toast({
 				title: "Deleted!",
 				description: "Expense deleted successfully.",
-				status: "success",
-				duration: 3000,
-				isClosable: true,
+				variant: "default",
 			});
 			onClose();
 		},
@@ -131,9 +121,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 			toast({
 				title: "Error!",
 				description: err?.response?.data?.message,
-				status: "error",
-				duration: 3000,
-				isClosable: true,
+				variant: "destructive",
 			});
 		},
 	});
@@ -149,18 +137,14 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 			toast({
 				title: "Removed!",
 				description: "Removed successfully.",
-				status: "success",
-				duration: 3000,
-				isClosable: true,
+				variant: "default",
 			});
 		},
 		onError: (err: any) => {
 			toast({
 				title: "Error!",
 				description: err?.response?.data?.message,
-				status: "error",
-				duration: 3000,
-				isClosable: true,
+				variant: "destructive",
 			});
 		},
 	});
@@ -180,36 +164,19 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 		deleteSharedExpenseMutation.mutate(sharedExpenseId);
 	};
 
-	const excludeFields = (data: any[], fields: string[]): any[] => {
-		return data.map((item) => {
-			const newItem = { ...item };
-			for (const field of fields) {
-				delete newItem[field];
-			}
-			return newItem;
-		});
-	};
-
 	const handleSharedExpenses = (data: any): any[] => {
+		if (!data?.shared_expenses) return [];
+
 		let payload: any[] = [];
-
-		data!?.shared_expenses.map((sharedExpense, index) => {
+		data.shared_expenses.map((sharedExpense: any) => {
 			let requiredData = {
-				id: 0,
-				loaner_name: "",
-				loaner_username: "",
-				loaner_id: 0,
-				amount: 0,
-				status: "UP",
+				id: sharedExpense.id,
+				amount: sharedExpense.amount,
+				loaner_id: sharedExpense.loaner.id,
+				loaner_name: sharedExpense.loaner.full_name,
+				loaner_username: sharedExpense.loaner.username,
+				status: sharedExpense.status,
 			};
-
-			requiredData.id = sharedExpense.id;
-			requiredData.amount = sharedExpense.amount;
-			requiredData.loaner_id = sharedExpense.loaner.id;
-			requiredData.loaner_name = sharedExpense.loaner.full_name;
-			requiredData.loaner_username = sharedExpense.loaner.username;
-			requiredData.status = sharedExpense.status;
-
 			payload.push(requiredData);
 		});
 
@@ -221,19 +188,33 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 		register,
 		handleSubmit,
 		watch,
+		reset,
 		formState: { errors },
 	} = useForm<IFormData>({
-		values: {
-			id: data!?.id,
-			amount: data!?.amount,
-			description: data!?.description,
-			create_dt: data!?.create_dt,
-			update_dt: data!?.update_dt,
+		defaultValues: {
+			id: data?.id,
+			amount: data?.amount,
+			description: data?.description,
+			create_dt: data?.create_dt,
+			update_dt: data?.update_dt,
 			shared_expenses: handleSharedExpenses(data),
 		},
 		mode: "all",
-		// shouldUnregister: true,
 	});
+
+	// Reset form when data changes (e.g. opening modal with different expense)
+	useEffect(() => {
+		if (data) {
+			reset({
+				id: data.id,
+				amount: data.amount,
+				description: data.description,
+				create_dt: data.create_dt,
+				update_dt: data.update_dt,
+				shared_expenses: handleSharedExpenses(data),
+			});
+		}
+	}, [data, reset]);
 
 	const {
 		fields: fieldsArray,
@@ -257,19 +238,15 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 			toast({
 				title: "Updated!",
 				description: "Expense updated successfully.",
-				status: "success",
-				duration: 2500,
-				isClosable: true,
+				variant: "default",
 			});
 			onClose();
 		},
 		onError: (err: any) => {
 			toast({
 				title: "Error!",
-				description: err.response.data,
-				status: "error",
-				duration: 2500,
-				isClosable: true,
+				description: err?.response?.data ?? "An unexpected error occurred.",
+				variant: "destructive",
 			});
 		},
 	});
@@ -279,191 +256,152 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 	};
 
 	return (
-		<>
-			<Modal isOpen={isOpen} onClose={onClose}>
-				<ModalOverlay />
-				<ModalContent>
-					<ModalHeader>Update Expense</ModalHeader>
-					<ModalCloseButton _focus={{ outline: "none" }} />
-					<ModalBody mb={2}>
-						<form
-							onSubmit={handleSubmit(handleUpdateFormSubmit)}
-							encType="multipart/form-data"
-						>
-							<input
-								type="hidden"
-								name="csrfmiddlewaretoken"
-								value={cookies.get("csrftoken")}
+		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+			<DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+				<DialogHeader>
+					<DialogTitle>Update Expense</DialogTitle>
+				</DialogHeader>
+				<form
+					onSubmit={handleSubmit(handleUpdateFormSubmit)}
+					className="space-y-6 py-4"
+				>
+					<input
+						type="hidden"
+						name="csrfmiddlewaretoken"
+						value={cookies.get("csrftoken")}
+					/>
+
+					<div className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="description">Description</Label>
+							<Input
+								id="description"
+								{...register("description", {})}
 							/>
-							<Flex direction={"column"} gap="5" rounded={"md"}>
-								<FormControl>
-									<FormLabel>Description</FormLabel>
-									<Input {...register("description", {})} />
-								</FormControl>
+						</div>
 
-								<Controller
-									control={control}
-									name="amount"
-									render={({ field }) => (
-										<FormControl>
-											<FormLabel>Amount</FormLabel>
-											<NumberInput
-												{...field}
-												onChange={(val) => field.onChange(parseFloat(val))}
-												step={200}
-												min={0}
-											>
-												<NumberInputField />
-												<NumberInputStepper>
-													<NumberIncrementStepper />
-													<NumberDecrementStepper />
-												</NumberInputStepper>
-											</NumberInput>
-										</FormControl>
-									)}
-								/>
+						<div className="space-y-2">
+							<Label htmlFor="amount">Amount</Label>
+							<Input
+								id="amount"
+								type="number"
+								step="0.01"
+								{...register("amount", { valueAsNumber: true })}
+							/>
+						</div>
 
-								{fieldsArray!?.map((arrayField, index) => (
-									<Flex gap="4" mb="4" key={arrayField.fieldArrID}>
+						<div className="space-y-4">
+							<Label>Splits</Label>
+							{fieldsArray?.map((arrayField, index) => (
+								<div key={arrayField.fieldArrID} className="flex gap-2 items-start">
+									<div className="flex-1">
 										<Controller
 											control={control}
-											name={`shared_expenses.${index}.loaner_id` as const}
+											name={`shared_expenses.${index}.loaner_id`}
 											rules={{ required: true }}
-											render={({ field }) => (
-												<Select required={true} {...field}>
-													{!isLoading &&
-														friendsList!.map((item, index) => (
-															<option
-																value={parseInt(item.friend.id)}
-																key={index}
-															>
+											render={({ field: { onChange, value } }) => (
+												<Select onValueChange={(val) => onChange(parseInt(val))} value={value?.toString()}>
+													<SelectTrigger>
+														<SelectValue placeholder="Select Friend" />
+													</SelectTrigger>
+													<SelectContent>
+														{!isLoading && friendsList?.map((item: any, idx: number) => (
+															<SelectItem key={idx} value={item.friend.id.toString()}>
 																{item.friend.full_name}
-															</option>
+															</SelectItem>
 														))}
+													</SelectContent>
 												</Select>
 											)}
 										/>
-										<Controller
-											control={control}
-											name={`shared_expenses.${index}.amount` as const}
-											render={({ field }) => (
-												<NumberInput
-													step={100}
-													defaultValue={0}
-													min={0}
-													{...field}
-													onChange={(val) => field.onChange(parseFloat(val))}
-												>
-													<NumberInputField required={true} />
-													<NumberInputStepper>
-														<NumberIncrementStepper />
-														<NumberDecrementStepper />
-													</NumberInputStepper>
-												</NumberInput>
-											)}
+									</div>
+									<div className="w-[120px]">
+										<Input
+											type="number"
+											step="1"
+											placeholder="Amount"
+											{...register(`shared_expenses.${index}.amount` as const, { valueAsNumber: true, required: true })}
 										/>
-										<Menu>
-											<MenuButton
-												p="2"
-												as={Button}
-												color={useColorModeValue("white", "gray.700")}
-												_hover={{
-													bg:
-														arrayField.status === "P"
-															? useColorModeValue("green.600", "green.300")
-															: useColorModeValue("red.600", "red.300"),
-												}}
-												_active={{
-													bg:
-														arrayField.status === "P"
-															? useColorModeValue("green.600", "green.300")
-															: useColorModeValue("red.600", "red.300"),
-												}}
-												bg={
-													arrayField.status === "P"
-														? useColorModeValue("green.500", "green.200")
-														: useColorModeValue("red.500", "red.200")
+									</div>
+
+									<DropdownMenu>
+										<DropdownMenuTrigger asChild>
+											<Button
+												variant="outline"
+												size="icon"
+												className={cn(
+													arrayField.status === "P" ? "bg-green-100 hover:bg-green-200 dark:bg-green-900/20" : "bg-red-100 hover:bg-red-200 dark:bg-red-900/20"
+												)}
+											>
+												<ChevronDown className="h-4 w-4" />
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent align="end">
+											<DropdownMenuItem
+												onClick={() =>
+													update(index, {
+														...arrayField,
+														status: arrayField.status === "P" ? "UP" : "P",
+													})
 												}
 											>
-												<Icon
-													as={FiChevronDown}
-													size="4"
-													boxSize={"4"}
-													mt="1"
-												/>
-											</MenuButton>
-											<MenuList px="2">
-												<MenuItem
-													rounded={"md"}
-													border="none"
-													_hover={{
-														border: "none",
-													}}
-													onClick={() =>
-														update(index, {
-															...arrayField,
-															status: arrayField.status === "P" ? "UP" : "P",
-														})
-													}
-												>
-													Mark {arrayField.status === "P" ? "Unpaid" : "Paid"}
-												</MenuItem>
-												<MenuItem
-													color={useColorModeValue("red.600", "red.300")}
-													rounded={"md"}
-													border="none"
-													_hover={{
-														border: "none",
-													}}
-													onClick={() => {
-														handleSharedExpenseDeleteMutation(arrayField.id!);
-														remove(index);
-													}}
-												>
-													Remove
-												</MenuItem>
-											</MenuList>
-										</Menu>
-									</Flex>
-								))}
+												Mark {arrayField.status === "P" ? "Unpaid" : "Paid"}
+											</DropdownMenuItem>
+											<DropdownMenuItem
+												className="text-red-600 focus:text-red-600"
+												onClick={() => {
+													if (arrayField.id) handleSharedExpenseDeleteMutation(arrayField.id);
+													remove(index);
+												}}
+											>
+												Remove
+											</DropdownMenuItem>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								</div>
+							))}
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="w-full border-dashed"
+								onClick={() =>
+									append({
+										loaner_id: 0,
+										amount: 0,
+										status: "UP",
+									})
+								}
+							>
+								<Plus className="mr-2 h-4 w-4" />
+								Add Split
+							</Button>
+						</div>
+
+						<div className="flex items-center justify-between pt-4">
+							<div className="flex-1 mr-4">
+								<TotalAmount control={control} amount={watch("amount") || 0} />
+							</div>
+							<div className="flex flex-col gap-2">
 								<Button
-									leftIcon={<HiPlus />}
-									onClick={() =>
-										append({
-											loaner_id: 0,
-											amount: "0",
-											status: "UP",
-										})
-									}
+									type="button"
+									variant="destructive"
+									onClick={() => handleExpenseDeleteMutation(data?.id)}
+									disabled={deleteExpenseMutation.isLoading}
 								>
-									Add Split
+									Delete
 								</Button>
-								<Flex justifyContent={"space-between"} alignItems={"center"}>
-									<TotalAmount control={control} amount={watch("amount")!} />
-									<Flex alignSelf={"flex-end"} mb={1}>
-										<Button
-											colorScheme={"red"}
-											variant="ghost"
-											mr="3"
-											isLoading={deleteExpenseMutation.isLoading}
-											onClick={() => handleExpenseDeleteMutation(data?.id)}
-										>
-											Delete
-										</Button>
-										<Button
-											colorScheme={"telegram"}
-											type="submit"
-											isLoading={updateMutation.isLoading}
-										>
-											Save
-										</Button>
-									</Flex>
-								</Flex>
-							</Flex>
-						</form>
-					</ModalBody>
-				</ModalContent>
-			</Modal>
-		</>
+								<Button
+									type="submit"
+									disabled={updateMutation.isLoading}
+								>
+									Save
+								</Button>
+							</div>
+						</div>
+					</div>
+				</form>
+			</DialogContent>
+		</Dialog>
 	);
 };

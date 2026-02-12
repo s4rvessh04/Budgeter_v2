@@ -1,40 +1,21 @@
 import React from "react";
-import {
-	Avatar,
-	Box,
-	Button,
-	Container,
-	Flex,
-	FormControl,
-	Grid,
-	GridItem,
-	IconButton,
-	Input,
-	InputGroup,
-	InputLeftElement,
-	Text,
-	useColorModeValue,
-} from "@chakra-ui/react";
-import { Navbar } from "../components";
 import { useMutation, useQuery, useQueryClient } from "react-query";
+import { Check, Search, UserMinus, X } from "lucide-react";
+
+import { Navbar } from "../components";
 import { axiosRequest } from "../utils";
-import {
-	HiOutlineCheck,
-	HiOutlineX,
-	HiSearch,
-	HiUserRemove,
-	HiX,
-} from "react-icons/hi";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const Friends = () => {
 	const [searchData, setSearchData] = React.useState<any>("");
-
 	const queryClient = useQueryClient();
 
 	const {
 		data: friendsData,
 		isLoading: friendsLoading,
-		error: friendsError,
 	} = useQuery({
 		queryKey: ["friends"],
 		queryFn: () => axiosRequest.get(`/friends`).then((res) => res.data),
@@ -44,15 +25,12 @@ export const Friends = () => {
 	const {
 		data: pendingFriends,
 		isLoading: pendingFriendsLoading,
-		error: pendingFriendsError,
 	} = useQuery({
 		queryKey: ["pendingFriends"],
 		queryFn: () =>
-			axiosRequest.get(`/friends/pending`).then((res) => res.data),
+			axiosRequest.get(`/friends/pending`).then((res) => res.data?.results ?? res.data),
 		refetchOnWindowFocus: false,
 	});
-
-	console.log(friendsData, pendingFriends);
 
 	const acceptFriendMutation = useMutation({
 		mutationFn: (data: any) =>
@@ -61,10 +39,8 @@ export const Friends = () => {
 			queryClient.invalidateQueries("friends");
 			queryClient.invalidateQueries("pendingFriends");
 		},
-		onError: (err) => {
-			console.log(err);
-		},
 	});
+
 	const removeFriendmutation = useMutation({
 		mutationFn: (data: any) =>
 			axiosRequest.delete(`/friends/${data.id}/delete`, data.payload),
@@ -72,139 +48,64 @@ export const Friends = () => {
 			queryClient.invalidateQueries("friends");
 			queryClient.invalidateQueries("pendingFriends");
 		},
-		onError: (err) => {
-			console.log(err);
-		},
 	});
 
 	return (
 		<Navbar>
-			<Container
-				minW={{
-					base: "container.sm",
-					lg: "container.md",
-					xl: "container.xl",
-				}}
-				minH={{ xl: "100vh", base: "full" }}
-				maxW={"full"}
-				display={"flex"}
-				flexDirection={"column"}
-				px={{ base: 2, md: 4, lg: 4 }}
-				py={{ base: 2, md: 4, lg: 4 }}
-			>
-				<FormControl
-					w={{ base: "full", lg: "50%" }}
-					justifyItems="center"
-					mb={{ base: "4", lg: "6" }}
-					display="flex"
-					gap={2}
-				>
-					<InputGroup>
-						<InputLeftElement
-							pointerEvents={"none"}
-							children={<HiSearch />}
-						/>
+			<div className="container mx-auto p-4 max-w-5xl">
+				<div className="flex justify-center mb-6">
+					<div className="relative w-full md:w-1/2">
+						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 						<Input
-							type={"search"}
+							type="search"
+							placeholder="Search friends..."
+							className="pl-9"
 							value={searchData}
-							placeholder="Search friends"
-							bg={useColorModeValue("white", "gray.800")}
-							border="1px"
-							borderColor={useColorModeValue(
-								"gray.200",
-								"gray.700"
-							)}
 							onChange={(e) => setSearchData(e.target.value)}
 						/>
-					</InputGroup>
-				</FormControl>
-				{pendingFriends?.length > 0 ? (
-					<Box
-						my={6}
-						borderRadius={"xl"}
-						p={4}
-						bg={useColorModeValue("gray.200", "gray.800")}
-					>
-						<Text
-							mb={4}
-							fontSize={"xl"}
-							fontWeight={"semibold"}
-							ml={2}
-						>
-							New Requests!
-						</Text>
-						<Grid
-							templateColumns={{
-								base: "repeat(1, 1fr)",
-								lg: "repeat(3, 1fr)",
-							}}
-							gap={{ base: 2, lg: 4 }}
-						>
-							{pendingFriends?.map((data, idx) => (
-								<GridItem
+					</div>
+				</div>
+
+				{pendingFriends?.length > 0 && (
+					<div className="mb-8 rounded-xl bg-muted/50 p-6">
+						<h2 className="mb-4 text-xl font-semibold ml-2">New Requests!</h2>
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+							{pendingFriends?.map((data: any, idx: number) => (
+								<div
 									key={idx}
-									display={"flex"}
-									border={"1px"}
-									borderColor={useColorModeValue(
-										"gray.200",
-										"gray.700"
-									)}
-									rounded="lg"
-									justifyContent="space-between"
-									alignItems="center"
-									px="4"
-									py="4"
-									bg={useColorModeValue(
-										"white",
-										"blackAlpha.300"
-									)}
+									className="flex items-center justify-between rounded-lg border bg-card p-4 shadow-sm"
 								>
-									<Flex gap={2}>
-										<Avatar
-											name={data?.user?.full_name}
-											src="https://bit.ly/broken-link"
-										/>
-										<Box>
-											<Text
-												fontSize={"lg"}
-												fontWeight="semibold"
-												color={useColorModeValue(
-													"gray.900",
-													"white"
-												)}
-											>
-												{data?.user?.full_name}
-											</Text>
-											<Text
-												fontSize={"smaller"}
-												color="gray.500"
-											>
-												@{data?.user?.username}
-											</Text>
-										</Box>
-									</Flex>
-									<Flex gap={4}>
-										<IconButton
-											aria-label="Accept"
-											icon={<HiOutlineCheck />}
-											colorScheme="green"
-											variant={"solid"}
+									<div className="flex items-center gap-3">
+										<Avatar>
+											<AvatarImage src="https://bit.ly/broken-link" alt={data?.user?.full_name} />
+											<AvatarFallback>{data?.user?.full_name?.charAt(0)}</AvatarFallback>
+										</Avatar>
+										<div className="overflow-hidden">
+											<p className="font-semibold text-lg truncate">{data?.user?.full_name}</p>
+											<p className="text-xs text-muted-foreground truncate">@{data?.user?.username}</p>
+										</div>
+									</div>
+									<div className="flex gap-2">
+										<Button
+											size="icon"
+											variant="default"
+											className="bg-green-600 hover:bg-green-700 h-8 w-8"
 											onClick={() =>
 												acceptFriendMutation.mutate({
 													id: data?.id,
 													payload: {
-														friend: data?.friend
-															?.id,
+														friend: data?.friend?.id,
 														status: "A",
 													},
 												})
 											}
-										/>
-										<IconButton
-											aria-label="Reject"
-											icon={<HiOutlineX />}
-											colorScheme="gray"
-											variant={"solid"}
+										>
+											<Check className="h-4 w-4" />
+										</Button>
+										<Button
+											size="icon"
+											variant="secondary"
+											className="h-8 w-8"
 											onClick={() =>
 												removeFriendmutation.mutate({
 													id: data?.id,
@@ -214,67 +115,39 @@ export const Friends = () => {
 													},
 												})
 											}
-										/>
-									</Flex>
-								</GridItem>
+										>
+											<X className="h-4 w-4" />
+										</Button>
+									</div>
+								</div>
 							))}
-						</Grid>
-					</Box>
-				) : null}
-				<Grid
-					templateColumns={{
-						base: "repeat(1, 1fr)",
-						lg: "repeat(3, 1fr)",
-					}}
-					gap={{ base: 2, lg: 4 }}
-				>
-					{friendsData?.length > 0
-						? friendsData?.map((data, idx) => (
-								<GridItem
-									key={idx}
-									display={"flex"}
-									border={"1px"}
-									borderColor={useColorModeValue(
-										"gray.200",
-										"gray.700"
-									)}
-									rounded="lg"
-									justifyContent="space-between"
-									alignItems="center"
-									px="4"
-									py="4"
-									bg={useColorModeValue("white", "gray.800")}
-								>
-									<Flex gap={2}>
-										<Avatar
-											name={data?.friend?.full_name}
-											src="https://bit.ly/broken-link"
-										/>
-										<Box>
-											<Text
-												fontSize={"lg"}
-												fontWeight="semibold"
-												color={useColorModeValue(
-													"gray.900",
-													"white"
-												)}
-											>
-												{data?.friend?.full_name}
-											</Text>
-											<Text
-												fontSize={"smaller"}
-												color="gray.500"
-											>
-												@{data?.friend?.username}
-											</Text>
-										</Box>
-									</Flex>
-									{data?.friend?.status}
-									<IconButton
-										aria-label="user-minus"
-										colorScheme="red"
-										variant="solid"
-										icon={<HiUserRemove />}
+						</div>
+					</div>
+				)}
+
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+					{friendsData?.length > 0 ? (
+						friendsData?.map((data: any, idx: number) => (
+							<div
+								key={idx}
+								className="flex items-center justify-between rounded-lg border bg-card p-4 shadow-sm"
+							>
+								<div className="flex items-center gap-3">
+									<Avatar>
+										<AvatarImage src="https://bit.ly/broken-link" alt={data?.friend?.full_name} />
+										<AvatarFallback>{data?.friend?.full_name?.charAt(0)}</AvatarFallback>
+									</Avatar>
+									<div className="overflow-hidden">
+										<p className="font-semibold text-lg truncate">{data?.friend?.full_name}</p>
+										<p className="text-xs text-muted-foreground truncate">@{data?.friend?.username}</p>
+									</div>
+								</div>
+								<div className="flex items-center gap-2">
+									{/* Status badge could be here but data.friend.status might be internal id or string */}
+									<Button
+										size="icon"
+										variant="destructive"
+										className="h-8 w-8"
 										onClick={() =>
 											removeFriendmutation.mutate({
 												id: data?.id,
@@ -284,12 +157,19 @@ export const Friends = () => {
 												},
 											})
 										}
-									/>
-								</GridItem>
-						  ))
-						: "No Friends found!"}
-				</Grid>
-			</Container>
+									>
+										<UserMinus className="h-4 w-4" />
+									</Button>
+								</div>
+							</div>
+						))
+					) : (
+						<div className="col-span-full text-center text-muted-foreground py-10">
+							No Friends found!
+						</div>
+					)}
+				</div>
+			</div>
 		</Navbar>
 	);
 };

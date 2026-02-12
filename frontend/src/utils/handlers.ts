@@ -1,5 +1,5 @@
 export function handleDefault<T>(value: T, defaultValue: T) {
-	if (!value as T) {
+	if (!value) {
 		return defaultValue;
 	} else {
 		return value;

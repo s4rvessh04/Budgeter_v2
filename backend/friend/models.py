@@ -11,7 +11,6 @@ class Friend(models.Model):
     )
 
     # Fields
-    id = models.IntegerField(primary_key=True)
     update_dt = models.DateTimeField(auto_now=True)
     create_dt = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=1, choices=STATUS_TYPES)

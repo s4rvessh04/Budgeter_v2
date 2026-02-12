@@ -1,91 +1,67 @@
 import {
-	Button,
-	Modal,
-	ModalBody,
-	ModalCloseButton,
-	ModalContent,
-	ModalFooter,
-	ModalHeader,
-	ModalOverlay,
-	Text,
-	useToast,
-	IconButton,
-	Flex,
-	Box,
-	useColorModeValue,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
 	Select,
-	Divider,
-} from "@chakra-ui/react";
-import { faker } from "@faker-js/faker";
-import React from "react";
-import { FiX } from "react-icons/fi";
-
-type displayData = {
-	name: string;
-	dateTime: string;
-	description: string;
-	amount: string;
-	status: string;
-};
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Props {
 	onClose: () => void;
 	isOpen: boolean;
-	displayData?: displayData;
 }
 
-export const QuickSettingsModal = ({ onClose, isOpen, displayData }: Props) => {
-	const toast = useToast();
+export const QuickSettingsModal = ({ onClose, isOpen }: Props) => {
+	const { toast } = useToast();
+
+	const handleApply = () => {
+		toast({
+			title: "Saved successfully",
+			variant: "default",
+		});
+		onClose();
+	};
 
 	return (
-		<Modal isOpen={isOpen} onClose={onClose}>
-			<ModalOverlay />
-			<ModalContent>
-				<ModalHeader>Quick Settings</ModalHeader>
-				<ModalCloseButton _focus={{ outline: "none" }} />
-				<ModalBody mb={2}>
-					<Text fontSize={"lg"} fontWeight="bold" color={"gray.700"}>
-						Expense Data
-					</Text>
-					<Flex
-						justifyContent="space-between"
-						// alignItems="center"
-						gap={1}
-						mt="2"
-						direction="column"
-					>
-						<Text
-							fontSize={"md"}
-							fontWeight="semibold"
-							mb="1"
-							flexShrink={0}
-						>
-							Filter by:
-						</Text>
-						<Select variant="filled">
-							<option value="option1">Current Month</option>
-							<option value="option2">All Time</option>
-							<option value="option3">Select Date</option>
-						</Select>
-					</Flex>
-				</ModalBody>
-				<ModalFooter p="3">
-					<Button
-						colorScheme="telegram"
-						mr={3}
-						onClick={() =>
-							toast({
-								title: `Saved successfully`,
-								position: "bottom",
-								isClosable: true,
-								status: "success",
-							}) && onClose()
-						}
-					>
-						Apply
-					</Button>
-				</ModalFooter>
-			</ModalContent>
-		</Modal>
+		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+			<DialogContent className="sm:max-w-[425px]">
+				<DialogHeader>
+					<DialogTitle>Quick Settings</DialogTitle>
+				</DialogHeader>
+				<div className="grid gap-4 py-4">
+					<div className="space-y-4">
+						<h4 className="font-medium leading-none">Expense Data</h4>
+						<div className="grid grid-cols-4 items-center gap-4">
+							<Label htmlFor="filter" className="text-right">
+								Filter by:
+							</Label>
+							<Select defaultValue="option1">
+								<SelectTrigger className="col-span-3" id="filter">
+									<SelectValue placeholder="Select filter" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="option1">Current Month</SelectItem>
+									<SelectItem value="option2">All Time</SelectItem>
+									<SelectItem value="option3">Select Date</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+					</div>
+				</div>
+				<DialogFooter>
+					<Button onClick={handleApply}>Apply</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 };

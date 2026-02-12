@@ -1,6 +1,8 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db import IntegrityError
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -15,15 +17,17 @@ class HomeView(APIView):
         return Response({"message": "Django Rest Framework - Home"})
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class LoginView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request, format=None):
-        if not request.data["username"] or not request.data["password"]:
-            raise ParseError("Please provide both username and password.", code=400)
+        username = request.data.get("username")
+        password = request.data.get("password")
 
-        username = request.data["username"]
-        password = request.data["password"]
+        if not username or not password:
+            raise ParseError("Please provide both username and password.", code=400)
 
         user = authenticate(request, username=username, password=password)
 
@@ -48,15 +52,17 @@ class LogoutView(APIView):
         return response
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class SignupView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request, format=None):
-        username = request.data["username"]
-        password = request.data["password"]
-        first_name = request.data["first_name"]
-        last_name = request.data["last_name"]
-        email = request.data["email"]
+        username = request.data.get("username")
+        password = request.data.get("password")
+        first_name = request.data.get("first_name", "")
+        last_name = request.data.get("last_name", "")
+        email = request.data.get("email")
 
         if not username or not password or not email:
             raise ParseError("Please provide username, password and email.", code=400)
@@ -70,3 +76,4 @@ class SignupView(APIView):
             return Response({"detail": "User already exists."}, status=400)
 
         return Response({"detail": "User created."}, status=201)
+

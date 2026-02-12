@@ -1,22 +1,22 @@
 from rest_framework import generics
 from rest_framework.response import Response
-from rest_framework.authentication import SessionAuthentication
-from rest_framework.permissions import IsAuthenticated
 
-from .serializers import *
+from service.mixins import OwnerFilterMixin
+
+from .serializers import (
+    ExpenseListSerializer,
+    ExpenseCreateSerializer,
+    ExpenseUpdateSerializer,
+    SharedExpenseBaseSerializer,
+    SharedExpenseOweSerializer,
+)
 from .models import Expense, SharedExpense
 
 
-class ExpenseListCreateAPIView(generics.ListCreateAPIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+class ExpenseListCreateAPIView(OwnerFilterMixin, generics.ListCreateAPIView):
     serializer_class = ExpenseListSerializer
     queryset = Expense.objects.order_by("-create_dt").all()
-
-    def get_queryset(self):
-        if self.request.user.is_superuser:
-            return super().get_queryset()
-        return self.queryset.filter(owner=self.request.user)
+    owner_field = "owner"
 
     def create(self, request, *args, **kwargs):
         self.serializer_class = ExpenseCreateSerializer
@@ -26,55 +26,31 @@ class ExpenseListCreateAPIView(generics.ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
 
-class ExpenseRetrieveAPIView(generics.RetrieveAPIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+class ExpenseRetrieveAPIView(OwnerFilterMixin, generics.RetrieveAPIView):
     serializer_class = ExpenseListSerializer
     queryset = Expense.objects.all()
     lookup_field = "pk"
-
-    def get_queryset(self):
-        if self.request.user.is_superuser:
-            return super().get_queryset()
-        return self.queryset.filter(owner=self.request.user)
+    owner_field = "owner"
 
 
-class ExpenseUpdateAPIView(generics.UpdateAPIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+class ExpenseUpdateAPIView(OwnerFilterMixin, generics.UpdateAPIView):
     serializer_class = ExpenseUpdateSerializer
     queryset = Expense.objects.all()
     lookup_field = "pk"
-
-    def get_queryset(self):
-        if self.request.user.is_superuser:
-            return super().get_queryset()
-        return self.queryset.filter(owner=self.request.user)
+    owner_field = "owner"
 
 
-class ExpenseDestroyAPIView(generics.DestroyAPIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+class ExpenseDestroyAPIView(OwnerFilterMixin, generics.DestroyAPIView):
     serializer_class = ExpenseListSerializer
     queryset = Expense.objects.all()
     lookup_field = "pk"
-
-    def get_queryset(self):
-        if self.request.user.is_superuser:
-            return super().get_queryset()
-        return self.queryset.filter(owner=self.request.user)
+    owner_field = "owner"
 
 
-class SharedExpenseListAPIView(generics.ListAPIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+class SharedExpenseListAPIView(OwnerFilterMixin, generics.ListAPIView):
     serializer_class = SharedExpenseBaseSerializer
     queryset = SharedExpense.objects.order_by("-expense__create_dt").all()
-
-    def get_queryset(self):
-        if self.request.user.is_superuser:
-            return super().get_queryset()
-        return self.queryset.filter(expense__owner=self.request.user)
+    owner_field = "expense__owner"
 
     def get(self, request, *args, **kwargs):
         from itertools import groupby
@@ -90,55 +66,31 @@ class SharedExpenseListAPIView(generics.ListAPIView):
         return Response(grouped_data)
 
 
-class SharedExpenseRetrieveAPIView(generics.RetrieveAPIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+class SharedExpenseRetrieveAPIView(OwnerFilterMixin, generics.RetrieveAPIView):
     serializer_class = SharedExpenseBaseSerializer
     queryset = SharedExpense.objects.all()
     lookup_field = "pk"
-
-    def get_queryset(self):
-        if self.request.user.is_superuser:
-            return super().get_queryset()
-        return self.queryset.filter(expense__owner=self.request.user)
+    owner_field = "expense__owner"
 
 
-class SharedExpenseUpdateAPIView(generics.UpdateAPIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+class SharedExpenseUpdateAPIView(OwnerFilterMixin, generics.UpdateAPIView):
     serializer_class = SharedExpenseBaseSerializer
     queryset = SharedExpense.objects.all()
     lookup_field = "pk"
-
-    def get_queryset(self):
-        if self.request.user.is_superuser:
-            return super().get_queryset()
-        return self.queryset.filter(expense__owner=self.request.user)
+    owner_field = "expense__owner"
 
 
-class SharedExpenseDestroyAPIView(generics.DestroyAPIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+class SharedExpenseDestroyAPIView(OwnerFilterMixin, generics.DestroyAPIView):
     serializer_class = SharedExpenseBaseSerializer
     queryset = SharedExpense.objects.all()
     lookup_field = "pk"
-
-    def get_queryset(self):
-        if self.request.user.is_superuser:
-            return super().get_queryset()
-        return self.queryset.filter(expense__owner=self.request.user)
+    owner_field = "expense__owner"
 
 
-class SharedExpenseOweListAPIView(generics.ListAPIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+class SharedExpenseOweListAPIView(OwnerFilterMixin, generics.ListAPIView):
     serializer_class = SharedExpenseOweSerializer
     queryset = SharedExpense.objects.order_by("-expense__create_dt").all()
-
-    def get_queryset(self):
-        if self.request.user.is_superuser:
-            return super().get_queryset()
-        return self.queryset.filter(loaner=self.request.user)
+    owner_field = "loaner"
 
     def get(self, request, *args, **kwargs):
         from itertools import groupby

@@ -7,7 +7,7 @@ class Expense(models.Model):
     create_dt = models.DateTimeField(auto_now_add=True)
     update_dt = models.DateTimeField(auto_now=True)
     description = models.CharField(max_length=200)
-    amount = models.DecimalField(decimal_places=2, max_digits=999999999999)
+    amount = models.DecimalField(decimal_places=2, max_digits=12)
 
     # Related Fields
     owner = models.ForeignKey(User, related_name="expenses", on_delete=models.CASCADE)
@@ -21,7 +21,7 @@ class SharedExpense(models.Model):
     create_dt = models.DateTimeField(auto_now_add=True)
     update_dt = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=2, choices=STATUS_TYPES)
-    amount = models.DecimalField(decimal_places=2, max_digits=999999999999)
+    amount = models.DecimalField(decimal_places=2, max_digits=12)
 
     # Related Fields
     expense = models.ForeignKey(

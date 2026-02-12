@@ -1,53 +1,15 @@
-import {
-	Center,
-	Container,
-	Divider,
-	Spacer,
-	Stack,
-	StackDivider,
-	Text,
-	useColorModeValue,
-} from "@chakra-ui/react";
 
 export const Error = () => {
 	return (
-		<Container
-			maxW="container.xl"
-			h={"100vh"}
-			minW={"100vw"}
-			bg={useColorModeValue("white", "black")}
-		>
-			<Center maxH={"100vh"} h="full">
-				<Stack
-					direction="row"
-					spacing="2"
-					divider={
-						<StackDivider
-							borderColor={useColorModeValue(
-								"gray.300",
-								"gray.800"
-							)}
-						/>
-					}
-				>
-					<Text
-						fontFamily={"mono"}
-						fontSize={"xl"}
-						alignSelf={"center"}
-						textColor={useColorModeValue("gray.400", "gray.700")}
-					>
-						404
-					</Text>
-					<Text
-						fontSize={"2xl"}
-						fontWeight={"semibold"}
-						textColor={useColorModeValue("gray.900", "white")}
-						alignSelf={"center"}
-					>
-						Page does not exist!
-					</Text>
-				</Stack>
-			</Center>
-		</Container>
+		<div className="flex h-screen w-screen items-center justify-center bg-background text-foreground">
+			<div className="flex items-center space-x-4 divide-x divide-muted">
+				<div className="font-mono text-xl text-muted-foreground pr-4">
+					404
+				</div>
+				<div className="pl-4 text-2xl font-semibold">
+					Page does not exist!
+				</div>
+			</div>
+		</div>
 	);
 };
