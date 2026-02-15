@@ -1,19 +1,11 @@
 import React from "react";
-import { Navbar } from "../components";
-import {
-	Avatar,
-	Box,
-	Container,
-	Flex,
-	Grid,
-	GridItem,
-	IconButton,
-	Text,
-	useColorModeValue,
-} from "@chakra-ui/react";
 import { useQueryClient, useMutation, useQuery } from "react-query";
+import { UserPlus } from "lucide-react";
+
+import { Navbar } from "../components";
 import { axiosRequest } from "../utils";
-import { HiUserAdd, HiUserRemove } from "react-icons/hi";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export const FriendsDiscover = () => {
 	const queryClient = useQueryClient();
@@ -25,7 +17,7 @@ export const FriendsDiscover = () => {
 	} = useQuery({
 		queryKey: ["discover"],
 		queryFn: () =>
-			axiosRequest.get(`/friends/discover`).then((res) => res.data),
+			axiosRequest.get(`/friends/discover`).then((res) => res.data?.results ?? res.data),
 		refetchOnWindowFocus: false,
 	});
 
@@ -36,91 +28,54 @@ export const FriendsDiscover = () => {
 			queryClient.invalidateQueries("discover");
 			queryClient.invalidateQueries("pendingFriends");
 		},
-		onError: (err) => {
-			console.log(err);
+		onError: (err: any) => {
+			// Silently handle
 		},
 	});
 
 	return (
 		<Navbar>
-			<Container
-				minW={{
-					base: "container.sm",
-					lg: "container.md",
-					xl: "container.xl",
-				}}
-				minH={{ xl: "100vh", base: "full" }}
-				maxW={"full"}
-				display={"flex"}
-				flexDirection={"column"}
-				px={{ base: 2, md: 4, lg: 4 }}
-				py={{ base: 2, md: 4, lg: 4 }}
-			>
-				<Grid
-					templateColumns={{
-						base: "repeat(1, 1fr)",
-						lg: "repeat(3, 1fr)",
-					}}
-					gap={{ base: 2, lg: 4 }}
-				>
-					{discoverData?.length > 0
-						? discoverData?.map((data, idx) => (
-								<GridItem
-									key={idx}
-									display={"flex"}
-									border={"1px"}
-									borderColor={useColorModeValue(
-										"gray.200",
-										"gray.700"
-									)}
-									rounded="lg"
-									justifyContent="space-between"
-									alignItems="center"
-									px="4"
-									py="4"
-									bg={useColorModeValue("white", "gray.800")}
+			<div className="container mx-auto p-4 max-w-5xl">
+				<h1 className="text-2xl font-bold mb-6">Discover Friends</h1>
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+					{discoverData?.length > 0 ? (
+						discoverData?.map((data: any, idx: number) => (
+							<div
+								key={idx}
+								className="flex items-center justify-between rounded-lg border bg-card p-4 shadow-sm"
+							>
+								<div className="flex items-center gap-3">
+									<Avatar>
+										<AvatarImage src="https://bit.ly/broken-link" alt={data?.full_name} />
+										<AvatarFallback>{data?.full_name?.charAt(0)}</AvatarFallback>
+									</Avatar>
+									<div className="overflow-hidden">
+										<p className="font-semibold text-lg truncate">{data?.full_name}</p>
+										<p className="text-xs text-muted-foreground truncate">@{data?.username}</p>
+									</div>
+								</div>
+								<Button
+									size="icon"
+									variant="default"
+									className="bg-green-600 hover:bg-green-700 h-8 w-8"
+									onClick={() =>
+										addFriendMutation.mutate({
+											friend: data?.id,
+											status: "P",
+										})
+									}
 								>
-									<Flex gap={2}>
-										<Avatar
-											name={data?.full_name}
-											src="https://bit.ly/broken-link"
-										/>
-										<Box>
-											<Text
-												fontSize={"lg"}
-												fontWeight="semibold"
-												color={useColorModeValue(
-													"gray.900",
-													"white"
-												)}
-											>
-												{data?.full_name}
-											</Text>
-											<Text
-												fontSize={"smaller"}
-												color="gray.500"
-											>
-												@{data?.username}
-											</Text>
-										</Box>
-									</Flex>
-									<IconButton
-										aria-label="user-minus"
-										colorScheme="green"
-										variant="solid"
-										icon={<HiUserAdd />}
-										onClick={() =>
-											addFriendMutation.mutate({
-												friend: data?.id,
-												status: "P",
-											})
-										}
-									/>
-								</GridItem>
-						  ))
-						: "No Users found!"}
-				</Grid>
-			</Container>
+									<UserPlus className="h-4 w-4" />
+								</Button>
+							</div>
+						))
+					) : (
+						<div className="col-span-full text-center text-muted-foreground py-10">
+							No Users found!
+						</div>
+					)}
+				</div>
+			</div>
 		</Navbar>
 	);
 };

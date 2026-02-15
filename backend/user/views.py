@@ -5,9 +5,9 @@ from rest_framework.generics import (
     UpdateAPIView,
     CreateAPIView,
 )
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import SessionAuthentication
 from rest_framework.response import Response
+
+from service.mixins import AuthenticatedMixin
 
 from .serializers import (
     UserSerializer,
@@ -16,9 +16,7 @@ from .serializers import (
 )
 
 
-class UserListAPIView(ListAPIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+class UserListAPIView(AuthenticatedMixin, ListAPIView):
     serializer_class = UserSerializer
     queryset = User.objects.all()
 
@@ -35,9 +33,7 @@ class UserListAPIView(ListAPIView):
         return self.queryset.all()
 
 
-class UserRetrieveAPIView(ListAPIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+class UserRetrieveAPIView(AuthenticatedMixin, ListAPIView):
     serializer_class = UserSerializer
     queryset = User.objects.all()
 
@@ -52,9 +48,7 @@ class UserRetrieveAPIView(ListAPIView):
         return super().get(request, *args, **kwargs)
 
 
-class UserUpdateAPIView(UpdateAPIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+class UserUpdateAPIView(AuthenticatedMixin, UpdateAPIView):
     serializer_class = UserUpdateSerializer
     queryset = User.objects.all()
     lookup_field = "username"
@@ -69,9 +63,7 @@ class UserUpdateAPIView(UpdateAPIView):
         return super().update(request, *args, **kwargs)
 
 
-class UserCheckPasswordAPIView(CreateAPIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+class UserCheckPasswordAPIView(AuthenticatedMixin, CreateAPIView):
     serializer_class = UserCheckPasswordSerializer
     queryset = User.objects.all()
     lookup_field = "username"

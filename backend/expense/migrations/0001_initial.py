@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 (
                     "amount",
                     models.DecimalField(
-                        decimal_places=2, default=0.0, max_digits=999999999999
+                        decimal_places=2, default=0.0, max_digits=12
                     ),
                 ),
                 ("is_shared", models.BooleanField(default=False)),

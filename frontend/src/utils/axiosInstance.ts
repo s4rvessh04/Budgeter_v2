@@ -2,7 +2,7 @@ import axios from "axios";
 
 import { useAuthStore } from "../stores";
 
-const BASEURL = "http://localhost:8000";
+const BASEURL = (import.meta.env.VITE_API_URL as string) ?? "http://localhost:8000";
 
 const parseBaseUrl = (path: string) => BASEURL.concat(path.trim());
 
@@ -30,15 +30,6 @@ export const axiosLogout = axios.create({
 	xsrfHeaderName: "X-CSRFToken",
 });
 
-axiosLogout.interceptors.request.use(
-	(config) => {
-		return config;
-	},
-	(error) => {
-		return Promise.reject(error);
-	}
-);
-
 axiosLogout.interceptors.response.use(
 	(config) => {
 		useAuthStore.setState({ isAuthenticated: false });
@@ -56,20 +47,45 @@ export const axiosRequest = axios.create({
 	xsrfHeaderName: "X-CSRFToken",
 });
 
+// Helper to get cookie value
+function getCookie(name: string) {
+	if (!document.cookie) {
+		return null;
+	}
+
+	const xsrfCookies = document.cookie
+		.split(";")
+		.map((c) => c.trim())
+		.filter((c) => c.startsWith(name + "="));
+
+	if (xsrfCookies.length === 0) {
+		return null;
+	}
+	return decodeURIComponent(xsrfCookies[0].split("=")[1]);
+}
+
+// Manually attach CSRF token to headers for axiosRequest
 axiosRequest.interceptors.request.use(
 	(config) => {
+		const token = getCookie("csrftoken");
+		if (token) {
+			// @ts-ignore
+			config.headers["X-CSRFToken"] = token;
+		}
 		return config;
 	},
-	(error) => {
-		return Promise.reject(error);
-	}
+	(error) => Promise.reject(error)
 );
 
-axiosRequest.interceptors.response.use(
+// Manually attach CSRF token to headers for axiosLogout
+axiosLogout.interceptors.request.use(
 	(config) => {
+		const token = getCookie("csrftoken");
+		if (token) {
+			// @ts-ignore
+			config.headers["X-CSRFToken"] = token;
+		}
 		return config;
 	},
-	(error) => {
-		return Promise.reject(error);
-	}
+	(error) => Promise.reject(error)
 );

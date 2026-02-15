@@ -1,5 +1,4 @@
-import { useCookies } from "react-cookie";
-import { Redirect, Route, RouteProps, useLocation } from "wouter";
+import { Redirect, Route, RouteProps } from "wouter";
 import { useAuthStore } from "../stores";
 
 export const ProtectedRoute = (props: RouteProps) => {

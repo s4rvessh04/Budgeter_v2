@@ -1,32 +1,24 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-	Box,
-	Flex,
-	Grid,
-	GridItem,
-	Tab,
-	TabList,
-	TabPanel,
-	TabPanels,
-	Tabs,
-	useColorMode,
-	useDisclosure,
-} from "@chakra-ui/react";
+import React, { useEffect, useState } from "react";
 import shallow from "zustand/shallow";
-import { faker } from "@faker-js/faker";
 import { useQuery } from "react-query";
 
 import { OweModal, SettleModal } from "../components";
-
-import { handleColorModeValue, parseAmount } from "../utils";
+import { parseAmount } from "../utils";
 import { axiosRequest } from "../utils/axiosInstance";
 import { useOweExpenseStore, useSettleExpenseStore } from "../stores";
 
-export const ExpenseList = () => {
-	const { colorMode } = useColorMode();
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
-	const oweExpensesModalDisclosure = useDisclosure();
-	const settleExpensesModalDisclosure = useDisclosure();
+export const ExpenseList = () => {
+	// We'll manage modal state locally
+	const [isOweModalOpen, setIsOweModalOpen] = useState(false);
+	const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
 
 	const [selectedOweExpense, setSelectedOweExpense] = React.useState();
 	const [selectedSettleExpense, setSelectedSettleExpense] = React.useState();
@@ -37,14 +29,10 @@ export const ExpenseList = () => {
 	const [
 		sumOweExpenseAmount,
 		updateSumOweExpenseAmount,
-		addSumOweExpensesAmount,
-		resetSumOweExpensesAmount,
 	] = useOweExpenseStore(
 		(state) => [
 			state.sumOweExpensesAmount,
 			state.updateSumOweExpensesAmount,
-			state.addSumOweExpensesAmount,
-			state.resetSumOweExpensesAmount,
 		],
 		shallow
 	);
@@ -52,14 +40,10 @@ export const ExpenseList = () => {
 	const [
 		sumSettleExpensesAmount,
 		updateSumSettleExpenseAmount,
-		addSumSettleExpensesAmount,
-		resetSumSettleExpensesAmount,
 	] = useSettleExpenseStore(
 		(state) => [
 			state.sumSettleExpensesAmount,
 			state.updateSumSettleExpensesAmount,
-			state.addSumSettleExpensesAmount,
-			state.resetSumSettleExpensesAmount,
 		],
 		shallow
 	);
@@ -69,23 +53,19 @@ export const ExpenseList = () => {
 			queryKey: "sharedExpenses",
 			enabled: activeTab === "settle",
 			queryFn: () =>
-				axiosRequest.get("/expenses/shared/").then((res) => res.data),
+				axiosRequest.get("/expenses/shared/").then((res) => res.data?.results ?? res.data),
 		});
 
 	const { data: oweExpensesData, isLoading: oweExpensesLoading } = useQuery({
 		queryKey: "oweExpenses",
 		enabled: activeTab === "owe",
 		queryFn: () =>
-			axiosRequest.get("/expenses/shared/owe/").then((res) => res.data),
+			axiosRequest.get("/expenses/shared/owe/").then((res) => res.data?.results ?? res.data),
 	});
 
-	const handleActiveTab = (tabName: "settle" | "owe") => {
-		setActiveTab(tabName);
-	};
-
 	useEffect(() => {
-		function handleCurrentData(data: unknown[]) {
-			let processedData: unknown[] = [];
+		function handleCurrentData(data: any[]) {
+			let processedData: any[] = [];
 
 			data.forEach((item) => {
 				let userData = {
@@ -95,7 +75,7 @@ export const ExpenseList = () => {
 				};
 
 				const userSumAmount = item.expenses.reduce(
-					(prev, curr) =>
+					(prev: any, curr: any) =>
 						parseFloat(prev) +
 						parseFloat(curr.status === "UP" ? curr.amount : 0),
 					0
@@ -113,7 +93,7 @@ export const ExpenseList = () => {
 			return processedData;
 		}
 
-		if (activeTab === "owe" && !oweExpensesLoading) {
+		if (activeTab === "owe" && !oweExpensesLoading && oweExpensesData) {
 			const data = handleCurrentData(oweExpensesData);
 			const sum = data.reduce(
 				(prev, curr) => parseFloat(prev) + parseFloat(curr.expensesSum),
@@ -122,7 +102,7 @@ export const ExpenseList = () => {
 			updateSumOweExpenseAmount(sum as number);
 			setActivePanelData(data);
 		}
-		if (activeTab === "settle" && !settleExpensesLoading) {
+		if (activeTab === "settle" && !settleExpensesLoading && settleExpensesData) {
 			const data = handleCurrentData(settleExpensesData);
 			const sum = data.reduce(
 				(prev, curr) => parseFloat(prev) + parseFloat(curr.expensesSum),
@@ -139,237 +119,78 @@ export const ExpenseList = () => {
 		activeTab,
 		oweExpensesLoading,
 		settleExpensesLoading,
+		updateSumOweExpenseAmount,
+		updateSumSettleExpenseAmount
 	]);
 
-	return (
-		<Tabs isLazy variant={"unstyled"} h="full">
-			<Flex flexDirection={"column"} h="inherit">
-				<Box p="4" pb="0">
-					<TabList
-						justifyContent={"space-between"}
-						gap={2}
-						p={1}
-						rounded={"lg"}
-						h="min-content"
-						bg={handleColorModeValue("blackAlpha.100", "gray.800", colorMode)}
+	const renderList = (type: "settle" | "owe") => (
+		<div className="flex flex-col h-full">
+			<div className="flex-1 overflow-auto">
+				{activePanelData?.map((item: any, idx: number) => (
+					<div
+						key={idx}
+						onClick={() => {
+							if (type === "settle") {
+								setSelectedSettleExpense(item);
+								setIsSettleModalOpen(true);
+							} else {
+								setSelectedOweExpense(item);
+								setIsOweModalOpen(true);
+							}
+						}}
+						className="grid grid-cols-4 gap-4 px-4 py-4 border-b hover:bg-muted/50 cursor-pointer transition-colors"
 					>
-						<Tab
-							w={"50%"}
-							_selected={{
-								bg: handleColorModeValue("white", "gray.700", colorMode),
-								textColor: handleColorModeValue("gray.700", "white", colorMode),
-								boxShadow: "md",
-							}}
-							_focus={{ outline: "none" }}
-							onClick={() => handleActiveTab("settle")}
-							rounded={"md"}
-							fontWeight={"semibold"}
-							textColor={handleColorModeValue(
-								"blackAlpha.500",
-								"gray.400",
-								colorMode
-							)}
-						>
-							Settle
-						</Tab>
-						<Tab
-							w={"50%"}
-							_selected={{
-								bg: handleColorModeValue("white", "gray.700", colorMode),
-								textColor: handleColorModeValue("gray.700", "white", colorMode),
-								boxShadow: "md",
-							}}
-							_focus={{ outline: "none" }}
-							onClick={() => handleActiveTab("owe")}
-							rounded={"md"}
-							fontWeight={"semibold"}
-							textColor={handleColorModeValue(
-								"blackAlpha.500",
-								"gray.400",
-								colorMode
-							)}
-						>
-							Owe
-						</Tab>
-					</TabList>
-				</Box>
-				<TabPanels flex={"1"} overflowY={"auto"}>
-					<TabPanel p="0" pt="2" h="full">
-						<Box h="full" overflow={"auto"}>
-							{activePanelData?.map((item, idx) => (
-								<Grid
-									key={idx}
-									templateColumns="repeat(4, 1fr)"
-									gap={4}
-									px={4}
-									py={4}
-									borderBottom={"1px"}
-									borderColor={handleColorModeValue(
-										"gray.100",
-										"gray.700",
-										colorMode
-									)}
-									w="full"
-									onClick={() => {
-										setSelectedSettleExpense(item);
-										return settleExpensesModalDisclosure.onOpen();
-									}}
-									_hover={{
-										bgColor: handleColorModeValue(
-											"blackAlpha.50",
-											"gray.800",
-											colorMode
-										),
-										cursor: "pointer",
-									}}
-								>
-									<GridItem
-										colSpan={3}
-										display="flex"
-										alignItems={"center"}
-										justifyContent={"start"}
-										noOfLines={2}
-										fontWeight="medium"
-									>
-										{item?.user.full_name}
-									</GridItem>
-									<GridItem
-										fontWeight={"semibold"}
-										colSpan={1}
-										display="flex"
-										justifyContent="end"
-									>
-										{parseAmount(item.expensesSum)}
-									</GridItem>
-								</Grid>
-							))}
-							<Grid
-								templateColumns="repeat(4, 1fr)"
-								gap={4}
-								px={4}
-								py={3}
-								w="full"
-								pos="sticky"
-								bottom="0"
-								bgColor={handleColorModeValue("white", "gray.900", colorMode)}
-								fontSize={"xs"}
-								textTransform={"uppercase"}
-								fontWeight="bold"
-								color={handleColorModeValue("gray.700", "gray.400", colorMode)}
-							>
-								<GridItem
-									colSpan={3}
-									display="flex"
-									alignItems={"center"}
-									justifyContent={"start"}
-								>
-									Total
-								</GridItem>
-								<GridItem
-									colSpan={1}
-									display="flex"
-									alignItems={"center"}
-									justifyContent={"end"}
-								>
-									{parseAmount(sumSettleExpensesAmount)}
-								</GridItem>
-							</Grid>
-						</Box>
-					</TabPanel>
-					<TabPanel p="0" pt="2" h="full">
-						<Box h="full" overflow={"auto"}>
-							{activePanelData?.map((data, idx) => (
-								<Grid
-									key={idx}
-									templateColumns="repeat(4, 1fr)"
-									gap={4}
-									px={4}
-									py={4}
-									borderBottom={"1px"}
-									borderColor={handleColorModeValue(
-										"gray.100",
-										"gray.700",
-										colorMode
-									)}
-									w="full"
-									onClick={() => {
-										setSelectedOweExpense(data);
-										return oweExpensesModalDisclosure.onOpen();
-									}}
-									_hover={{
-										bgColor: handleColorModeValue(
-											"blackAlpha.50",
-											"gray.800",
-											colorMode
-										),
-										cursor: "pointer",
-									}}
-								>
-									<GridItem
-										colSpan={3}
-										display="flex"
-										alignItems={"center"}
-										justifyContent={"start"}
-										noOfLines={2}
-										fontWeight="medium"
-									>
-										{data?.user.full_name}
-									</GridItem>
-									<GridItem
-										fontWeight={"semibold"}
-										colSpan={1}
-										display="flex"
-										justifyContent="end"
-									>
-										{parseAmount(data.expensesSum)}
-									</GridItem>
-								</Grid>
-							))}
-							<Grid
-								templateColumns="repeat(4, 1fr)"
-								gap={4}
-								px={4}
-								py={3}
-								w="full"
-								pos="sticky"
-								bottom="0"
-								bgColor={handleColorModeValue("white", "gray.900", colorMode)}
-								fontSize={"xs"}
-								textTransform={"uppercase"}
-								fontWeight="bold"
-								color={handleColorModeValue("gray.700", "gray.400", colorMode)}
-							>
-								<GridItem
-									colSpan={3}
-									display="flex"
-									alignItems={"center"}
-									justifyContent={"start"}
-								>
-									Total
-								</GridItem>
-								<GridItem
-									colSpan={1}
-									display="flex"
-									alignItems={"center"}
-									justifyContent={"end"}
-								>
-									{parseAmount(sumOweExpenseAmount)}
-								</GridItem>
-							</Grid>
-						</Box>
-					</TabPanel>
-				</TabPanels>
-			</Flex>
+						<div className="col-span-3 flex items-center justify-start font-medium truncate">
+							{item?.user.full_name}
+						</div>
+						<div className="col-span-1 flex items-center justify-end font-semibold">
+							{parseAmount(item.expensesSum)}
+						</div>
+					</div>
+				))}
+			</div>
+			<div className="sticky bottom-0 bg-background border-t p-4 text-xs font-bold uppercase text-muted-foreground grid grid-cols-4 gap-4">
+				<div className="col-span-3 flex items-center justify-start">
+					Total
+				</div>
+				<div className="col-span-1 flex items-center justify-end font-semibold text-foreground">
+					{parseAmount(type === "settle" ? sumSettleExpensesAmount : sumOweExpenseAmount)}
+				</div>
+			</div>
+		</div>
+	);
+
+	return (
+		<>
+			<Tabs
+				defaultValue="settle"
+				className="h-full flex flex-col"
+				onValueChange={(val) => setActiveTab(val as "settle" | "owe")}
+			>
+				<div className="px-4 pt-4">
+					<TabsList className="grid w-full grid-cols-2">
+						<TabsTrigger value="settle">Settle</TabsTrigger>
+						<TabsTrigger value="owe">Owe</TabsTrigger>
+					</TabsList>
+				</div>
+				<TabsContent value="settle" className="flex-1 overflow-hidden mt-0">
+					{renderList("settle")}
+				</TabsContent>
+				<TabsContent value="owe" className="flex-1 overflow-hidden mt-0">
+					{renderList("owe")}
+				</TabsContent>
+			</Tabs>
+
 			<OweModal
-				onClose={oweExpensesModalDisclosure.onClose}
-				isOpen={oweExpensesModalDisclosure.isOpen}
+				onClose={() => setIsOweModalOpen(false)}
+				isOpen={isOweModalOpen}
 				data={selectedOweExpense}
 			/>
 			<SettleModal
-				onClose={settleExpensesModalDisclosure.onClose}
-				isOpen={settleExpensesModalDisclosure.isOpen}
+				onClose={() => setIsSettleModalOpen(false)}
+				isOpen={isSettleModalOpen}
 				data={selectedSettleExpense}
 			/>
-		</Tabs>
+		</>
 	);
 };

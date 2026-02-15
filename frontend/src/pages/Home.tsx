@@ -1,54 +1,22 @@
-import { Container, Grid, GridItem, useColorModeValue } from "@chakra-ui/react";
 import { ExpenseTable, TopCards, Navbar } from "../components";
 import { ExpenseList } from "../components/ExpenseList";
 
 export const Home = () => {
 	return (
 		<Navbar>
-			<Container
-				minW={{
-					base: "container.sm",
-					lg: "container.md",
-					xl: "container.xl",
-				}}
-				minH={{ xl: "100vh", base: "full" }}
-				maxW={"full"}
-				display={"flex"}
-				flexDirection={"column"}
-				px={{ base: 2, md: 4, lg: 4 }}
-				py={{ base: 2, md: 4, lg: 4 }}
-			>
+			<div className="container mx-auto flex min-h-full flex-col p-4 md:p-6 lg:p-8 max-w-7xl">
 				<TopCards />
-				<Grid
-					h={{ base: "5xl", lg: "xl" }}
-					flex={1}
-					templateColumns="repeat(6, 1fr)"
-					gap={5}
-				>
-					<GridItem
-						colSpan={{ base: 6, lg: 4 }}
-						border={"1px"}
-						rounded={"lg"}
-						maxH={"full"}
-						overflowY={"hidden"}
-						borderColor={useColorModeValue("gray.300", "gray.700")}
-						bgColor={useColorModeValue("white", "gray.900")}
-					>
-						<ExpenseTable />
-					</GridItem>
-					<GridItem
-						colSpan={{ base: 6, lg: 2 }}
-						border={"1px"}
-						rounded={"lg"}
-						maxH={"full"}
-						overflowY={"hidden"}
-						borderColor={useColorModeValue("gray.300", "gray.700")}
-						bgColor={useColorModeValue("white", "gray.900")}
-					>
+				<div className="grid grid-cols-1 lg:grid-cols-6 gap-5 h-full">
+					<div className="col-span-1 lg:col-span-4 rounded-lg border bg-card shadow-sm overflow-hidden h-full flex flex-col">
+						<div className="flex-1 overflow-y-auto">
+							<ExpenseTable />
+						</div>
+					</div>
+					<div className="col-span-1 lg:col-span-2 rounded-lg border bg-card shadow-sm overflow-hidden h-full flex flex-col">
 						<ExpenseList />
-					</GridItem>
-				</Grid>
-			</Container>
+					</div>
+				</div>
+			</div>
 		</Navbar>
 	);
 };
