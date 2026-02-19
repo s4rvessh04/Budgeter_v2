@@ -85,3 +85,11 @@ class SignupView(APIView):
 
         return Response({"detail": "User created."}, status=201)
 
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class GetCSRFTokenView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def get(self, request, format=None):
+        return Response({"detail": "CSRF cookie set."})

@@ -64,12 +64,21 @@ function getCookie(name: string) {
 	return decodeURIComponent(xsrfCookies[0].split("=")[1]);
 }
 
+// Fetch CSRF cookie from backend if not already present
+async function ensureCSRFCookie(): Promise<string | null> {
+	let token = getCookie("csrftoken");
+	if (!token) {
+		await axiosLogin.get("/csrf/");
+		token = getCookie("csrftoken");
+	}
+	return token;
+}
+
 // Manually attach CSRF token to headers for axiosRequest
 axiosRequest.interceptors.request.use(
-	(config) => {
-		const token = getCookie("csrftoken");
+	async (config) => {
+		const token = await ensureCSRFCookie();
 		if (token) {
-			// @ts-ignore
 			config.headers["X-CSRFToken"] = token;
 		}
 		return config;
@@ -79,10 +88,9 @@ axiosRequest.interceptors.request.use(
 
 // Manually attach CSRF token to headers for axiosLogout
 axiosLogout.interceptors.request.use(
-	(config) => {
-		const token = getCookie("csrftoken");
+	async (config) => {
+		const token = await ensureCSRFCookie();
 		if (token) {
-			// @ts-ignore
 			config.headers["X-CSRFToken"] = token;
 		}
 		return config;
