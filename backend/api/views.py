@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db import IntegrityError
+from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 
@@ -41,7 +42,9 @@ class LoginView(APIView):
 
         if user is not None:
             login(request, user)
-            response = Response({"detail": "Logged in."})
+            response = Response(
+                {"detail": "Logged in.", "csrfToken": get_token(request)}
+            )
             response.set_cookie(
                 "loggedin", True, samesite="lax", max_age=1209600, path="/"
             )
@@ -92,4 +95,4 @@ class GetCSRFTokenView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, format=None):
-        return Response({"detail": "CSRF cookie set."})
+        return Response({"detail": "CSRF cookie set.", "csrfToken": get_token(request)})
