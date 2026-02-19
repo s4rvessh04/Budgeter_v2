@@ -14,11 +14,14 @@ export const axiosLogin = axios.create({
 });
 
 axiosLogin.interceptors.response.use(
-	(config) => {
-		if (config.status == 200) {
+	(response) => {
+		if (response.status == 200) {
 			useAuthStore.setState({ isAuthenticated: true });
 		}
-		return config;
+		if (response.data?.csrfToken) {
+			csrfToken = response.data.csrfToken;
+		}
+		return response;
 	},
 	(error) => Promise.reject(error)
 );
@@ -47,37 +50,28 @@ export const axiosRequest = axios.create({
 	xsrfHeaderName: "X-CSRFToken",
 });
 
-// Helper to get cookie value
-function getCookie(name: string) {
-	if (!document.cookie) {
-		return null;
-	}
+// In-memory CSRF token (works across different domains)
+let csrfToken: string | null = null;
 
-	const xsrfCookies = document.cookie
-		.split(";")
-		.map((c) => c.trim())
-		.filter((c) => c.startsWith(name + "="));
-
-	if (xsrfCookies.length === 0) {
-		return null;
-	}
-	return decodeURIComponent(xsrfCookies[0].split("=")[1]);
+export function setCSRFToken(token: string) {
+	csrfToken = token;
 }
 
-// Fetch CSRF cookie from backend if not already present
-async function ensureCSRFCookie(): Promise<string | null> {
-	let token = getCookie("csrftoken");
-	if (!token) {
-		await axiosLogin.get("/csrf/");
-		token = getCookie("csrftoken");
+// Fetch CSRF token from backend if not already present
+async function ensureCSRFToken(): Promise<string | null> {
+	if (!csrfToken) {
+		const res = await axiosLogin.get("/csrf/");
+		csrfToken = res.data?.csrfToken ?? null;
 	}
-	return token;
+	return csrfToken;
 }
 
-// Manually attach CSRF token to headers for axiosRequest
+
+
+// Attach CSRF token to headers for axiosRequest
 axiosRequest.interceptors.request.use(
 	async (config) => {
-		const token = await ensureCSRFCookie();
+		const token = await ensureCSRFToken();
 		if (token) {
 			config.headers["X-CSRFToken"] = token;
 		}
@@ -86,10 +80,10 @@ axiosRequest.interceptors.request.use(
 	(error) => Promise.reject(error)
 );
 
-// Manually attach CSRF token to headers for axiosLogout
+// Attach CSRF token to headers for axiosLogout
 axiosLogout.interceptors.request.use(
 	async (config) => {
-		const token = await ensureCSRFCookie();
+		const token = await ensureCSRFToken();
 		if (token) {
 			config.headers["X-CSRFToken"] = token;
 		}
