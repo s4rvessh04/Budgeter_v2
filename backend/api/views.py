@@ -17,6 +17,14 @@ class HomeView(APIView):
         return Response({"message": "Django Rest Framework - Home"})
 
 
+class HealthCheckView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response({"status": "ok"})
+
+
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class LoginView(APIView):
     authentication_classes = []

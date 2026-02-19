@@ -26,8 +26,11 @@ SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 
 FRONTEND_IP = config("FRONTEND_IP", default="localhost")
+RENDER_EXTERNAL_HOSTNAME = config("RENDER_EXTERNAL_HOSTNAME", default="")
 
-ALLOWED_HOSTS = [FRONTEND_IP]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", FRONTEND_IP]
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 
 # Application definition
@@ -139,13 +142,15 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    f"http://{FRONTEND_IP}:5173"
+    f"http://{FRONTEND_IP}:5173",
+    f"https://{FRONTEND_IP}",
 ]
 
 CORS_ORIGIN_WHITELIST = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    f"http://{FRONTEND_IP}:5173"
+    f"http://{FRONTEND_IP}:5173",
+    f"https://{FRONTEND_IP}",
 ]
 
 CSRF_COOKIE_SAMESITE = "Lax"
