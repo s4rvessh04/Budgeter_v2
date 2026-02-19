@@ -26,6 +26,7 @@ SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 
 FRONTEND_IP = config("FRONTEND_IP", default="localhost")
+FRONTEND_IP = FRONTEND_IP.replace("https://", "").replace("http://", "").rstrip("/")
 RENDER_EXTERNAL_HOSTNAME = config("RENDER_EXTERNAL_HOSTNAME", default="")
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", FRONTEND_IP]
