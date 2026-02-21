@@ -2,11 +2,10 @@ import React from "react";
 import { useMutation } from "react-query";
 import { useLocation } from "wouter";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Wallet } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { axiosLogin } from "../utils";
-import viteSvg from "../../public/vite.svg";
 import loginBackground from "../assets/login-background.jpg";
 
 import { Button } from "@/components/ui/button";
@@ -86,19 +85,20 @@ export const Login = () => {
 						backgroundPosition: "center",
 					}}
 				/>
+				<div className="absolute inset-0 bg-black/40" />
 				<div className="relative z-20 flex items-center text-lg font-medium">
-					<img src={viteSvg} className="mr-2 h-8 w-8" alt="Logo" />
-					Budgeter v2
+					<Wallet className="mr-2 h-7 w-7 text-white/80" />
+					Budgeter
 				</div>
 				<div className="relative z-20 mt-auto">
 					<blockquote className="space-y-2">
 						<p className="text-lg">
-							&ldquo;Control your expenses, budget your life.&rdquo;
+							&ldquo;Take control of your finances. Track, split, and settle — all in one place.&rdquo;
 						</p>
 					</blockquote>
 				</div>
 			</div>
-			<div className="lg:p-8 flex items-center justify-center">
+			<div className="flex min-h-screen items-center justify-center p-6 lg:min-h-0 lg:p-8">
 				<div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
 					<div className="flex flex-col space-y-2 text-center">
 						<h1 className="text-2xl font-semibold tracking-tight">

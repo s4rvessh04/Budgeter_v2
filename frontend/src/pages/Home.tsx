@@ -4,7 +4,7 @@ import { ExpenseList } from "../components/ExpenseList";
 export const Home = () => {
 	return (
 		<Navbar>
-			<div className="container mx-auto flex min-h-full flex-col p-4 md:p-6 lg:p-8 max-w-7xl">
+			<div className="container mx-auto flex min-h-full flex-col max-w-7xl">
 				<TopCards />
 				<div className="grid grid-cols-1 lg:grid-cols-6 gap-5 h-full">
 					<div className="col-span-1 lg:col-span-4 rounded-lg border bg-card shadow-sm overflow-hidden h-full flex flex-col">
