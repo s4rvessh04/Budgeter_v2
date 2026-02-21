@@ -10,10 +10,10 @@ import {
 	PlusCircle,
 	Settings,
 	Users,
+	Wallet,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import viteSvg from "../../public/vite.svg";
 import { axiosLogout } from "../utils";
 import {
 	NotificationsModal,
@@ -75,10 +75,10 @@ export function Navbar({ children }: { children: ReactNode }) {
 	return (
 		<div className="flex min-h-screen w-full flex-col bg-muted/40">
 			{/* Mobile Nav */}
-			<header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 lg:hidden">
+			<header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 lg:hidden">
 				<Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
 					<SheetTrigger asChild>
-						<Button size="icon" variant="outline" className="sm:hidden">
+						<Button size="icon" variant="outline" className="lg:hidden">
 							<Menu className="h-5 w-5" />
 							<span className="sr-only">Toggle Menu</span>
 						</Button>
@@ -94,8 +94,8 @@ export function Navbar({ children }: { children: ReactNode }) {
 					</SheetContent>
 				</Sheet>
 				<div className="flex items-center gap-2">
-					<img src={viteSvg} className="h-6 w-6" alt="Logo" />
-					<span className="text-lg font-bold font-mono">Budgeter</span>
+					<Wallet className="h-5 w-5 text-foreground" />
+					<span className="text-lg font-bold tracking-tight">Budgeter</span>
 				</div>
 			</header>
 
@@ -138,8 +138,8 @@ const SidebarContent = ({
 			<div className="flex h-full flex-col gap-2">
 				<div className="flex h-14 items-center border-b px-6 lg:h-[60px]">
 					<Link to="/" className="flex items-center gap-2 font-semibold">
-						<img src={viteSvg} className="h-6 w-6" alt="Logo" />
-						<span className="font-mono text-xl font-bold">Budgeter</span>
+						<Wallet className="h-5 w-5 text-emerald-500" />
+						<span className="text-xl font-bold tracking-tight">Budgeter</span>
 					</Link>
 				</div>
 

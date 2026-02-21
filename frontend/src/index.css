@@ -34,7 +34,6 @@
     --ring: 0 0% 0%;
 
     --radius: 0.75rem;
-    /* Clean, modern radius */
   }
 
   .dark {
@@ -70,12 +69,24 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   * {
     @apply border-border;
   }
 
   body {
     @apply bg-background text-foreground transition-colors duration-300 font-sans antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Better focus styles for accessibility */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
   }
 }
 
@@ -86,4 +97,11 @@
 
 .glass-card {
   @apply bg-card border border-border/50 transition-all duration-300 hover:border-primary/50;
+}
+
+/* Prevent content shift from scrollbar */
+@supports (scrollbar-gutter: stable) {
+  html {
+    scrollbar-gutter: stable;
+  }
 }

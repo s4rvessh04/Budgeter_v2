@@ -293,7 +293,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 						<div className="space-y-4">
 							<Label>Splits</Label>
 							{fieldsArray?.map((arrayField, index) => (
-								<div key={arrayField.fieldArrID} className="flex gap-2 items-start">
+								<div key={arrayField.fieldArrID} className="flex flex-col sm:flex-row gap-2 items-start">
 									<div className="flex-1">
 										<Controller
 											control={control}
@@ -315,49 +315,51 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 											)}
 										/>
 									</div>
-									<div className="w-[120px]">
-										<Input
-											type="number"
-											step="1"
-											placeholder="Amount"
-											{...register(`shared_expenses.${index}.amount` as const, { valueAsNumber: true, required: true })}
-										/>
-									</div>
+									<div className="flex w-full gap-2 sm:w-auto">
+										<div className="flex-1 sm:w-[120px]">
+											<Input
+												type="number"
+												step="1"
+												placeholder="Amount"
+												{...register(`shared_expenses.${index}.amount` as const, { valueAsNumber: true, required: true })}
+											/>
+										</div>
 
-									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
-											<Button
-												variant="outline"
-												size="icon"
-												className={cn(
-													arrayField.status === "P" ? "bg-green-100 hover:bg-green-200 dark:bg-green-900/20" : "bg-red-100 hover:bg-red-200 dark:bg-red-900/20"
-												)}
-											>
-												<ChevronDown className="h-4 w-4" />
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem
-												onClick={() =>
-													update(index, {
-														...arrayField,
-														status: arrayField.status === "P" ? "UP" : "P",
-													})
-												}
-											>
-												Mark {arrayField.status === "P" ? "Unpaid" : "Paid"}
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												className="text-red-600 focus:text-red-600"
-												onClick={() => {
-													if (arrayField.id) handleSharedExpenseDeleteMutation(arrayField.id);
-													remove(index);
-												}}
-											>
-												Remove
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<Button
+													variant="outline"
+													size="icon"
+													className={cn(
+														arrayField.status === "P" ? "bg-green-100 hover:bg-green-200 dark:bg-green-900/20" : "bg-red-100 hover:bg-red-200 dark:bg-red-900/20"
+													)}
+												>
+													<ChevronDown className="h-4 w-4" />
+												</Button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent align="end">
+												<DropdownMenuItem
+													onClick={() =>
+														update(index, {
+															...arrayField,
+															status: arrayField.status === "P" ? "UP" : "P",
+														})
+													}
+												>
+													Mark {arrayField.status === "P" ? "Unpaid" : "Paid"}
+												</DropdownMenuItem>
+												<DropdownMenuItem
+													className="text-red-600 focus:text-red-600"
+													onClick={() => {
+														if (arrayField.id) handleSharedExpenseDeleteMutation(arrayField.id);
+														remove(index);
+													}}
+												>
+													Remove
+												</DropdownMenuItem>
+											</DropdownMenuContent>
+										</DropdownMenu>
+									</div>
 								</div>
 							))}
 							<Button
@@ -378,7 +380,7 @@ export const ExpenseEditModal = ({ onClose, isOpen, data }: Props) => {
 							</Button>
 						</div>
 
-						<div className="flex items-center justify-between pt-4">
+						<div className="flex flex-col gap-4 pt-4 sm:flex-row sm:items-center sm:justify-between">
 							<div className="flex-1 mr-4">
 								<TotalAmount control={control} amount={watch("amount") || 0} />
 							</div>
