@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import UniqueConstraint
+from django.db.models.functions import Greatest, Least
 
 
 class Friend(models.Model):
@@ -18,3 +20,12 @@ class Friend(models.Model):
     # Related Fields
     user = models.ForeignKey(User, related_name="friends", on_delete=models.CASCADE)
     friend = models.ForeignKey(User, related_name="friend_of", on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                Least("user_id", "friend_id"),
+                Greatest("user_id", "friend_id"),
+                name="unique_friend_pair",
+            ),
+        ]
