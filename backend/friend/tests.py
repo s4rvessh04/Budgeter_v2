@@ -81,3 +81,34 @@ class FriendTestCase(TestCase):
         self.client.logout()
         response = self.client.get(self.base_url)
         self.assertEqual(response.status_code, 403)
+
+    def test_duplicate_friend_request_rejected(self):
+        """Sending a second friend request to the same user should be rejected."""
+        self.client.post(self.base_url, {"friend": self.other.id, "status": "P"})
+        response = self.client.post(
+            self.base_url, {"friend": self.other.id, "status": "P"}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Friend.objects.count(), 1)
+
+    def test_simultaneous_friend_requests_auto_accepts(self):
+        """If User A has a pending request from B, and B sends one to A,
+        the existing request should be auto-accepted instead of creating a duplicate."""
+        # User A sends a pending request to User B
+        self.client.post(self.base_url, {"friend": self.other.id, "status": "P"})
+        self.assertEqual(Friend.objects.count(), 1)
+
+        # Now User B sends a request to User A
+        other_client = APIClient()
+        other_client.force_login(self.other)
+        response = other_client.post(
+            self.base_url, {"friend": self.user.id, "status": "P"}
+        )
+        # Should succeed (the serializer auto-accepts the reverse pending request)
+        self.assertEqual(response.status_code, 201)
+        # Should still be only one Friend row, not two
+        self.assertEqual(Friend.objects.count(), 1)
+        # The existing request should now be accepted
+        friend_req = Friend.objects.first()
+        self.assertEqual(friend_req.status, "A")
+
